@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Decides what a day looks like: the meteorological season and the seasonal event that wins it, if any.
@@ -66,6 +67,52 @@ final class SeasonalCalendar {
         Day(Season season, String event) {
             this.season = season;
             this.event = event;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof Day)) return false;
+            Day d = (Day) o;
+            return season == d.season && Objects.equals(event, d.event);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(season, event);
+        }
+    }
+
+    /**
+     * A calendar and the day Home was built for. Home is built once per start, so it can ask on each return
+     * whether that day still holds, and rebuild only when a season or an event began or ended in between.
+     */
+    static final class Snapshot {
+        static final Snapshot OFF = new Snapshot(SeasonalCalendar.OFF, Day.NOTHING);
+
+        final SeasonalCalendar calendar;
+        final Day day;
+
+        private Snapshot(SeasonalCalendar calendar, Day day) {
+            this.calendar = calendar;
+            this.day = day;
+        }
+
+        /** The calendar as it stands today. */
+        static Snapshot today(SeasonalCalendar calendar) {
+            return of(calendar, LocalDate.now());
+        }
+
+        static Snapshot of(SeasonalCalendar calendar, LocalDate date) {
+            return calendar == null || calendar.isOff() ? OFF : new Snapshot(calendar, calendar.on(date));
+        }
+
+        /** Whether {@code date} looks different from the day this snapshot was taken for. */
+        boolean staleOn(LocalDate date) {
+            return !calendar.isOff() && !day.equals(calendar.on(date));
+        }
+
+        boolean stale() {
+            return staleOn(LocalDate.now());
         }
     }
 

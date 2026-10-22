@@ -213,6 +213,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private boolean focusOvershoot;
     /** Festive skin from the theme (see Festival); applied while it is active today. */
     private Festival festival = Festival.NONE;
+    /** Seasons and events from the theme, and the day Home was built for (see SeasonalCalendar). */
+    private SeasonalCalendar.Snapshot seasonal = SeasonalCalendar.Snapshot.OFF;
     private boolean festive;
     private DiyaDrawable diya;
     private BellDrawable bell;
@@ -363,6 +365,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         focusOvershoot = cfg.focusOvershoot;
         festival = cfg.festival;
         festive = festival.active(LocalDate.now());
+        seasonal = cfg.seasonal;
         liveTvPkg = cfg.liveTvPackage;
         idleClockMs = cfg.homeIdleClockMinutes * MINUTE_MS;
         bootToLiveTv = cfg.bootToLiveTv;
@@ -794,6 +797,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         super.onResume();
         // A festival that started or ended while Home was in the background: rebuild with or without it.
         if (festive != festival.active(LocalDate.now())) {
+            recreate();
+            return;
+        }
+        // Likewise a season or a seasonal event (SeasonalCalendar): Home is rebuilt on return, never while in view.
+        if (seasonal.stale()) {
             recreate();
             return;
         }

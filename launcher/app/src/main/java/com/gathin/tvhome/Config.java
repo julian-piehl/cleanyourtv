@@ -161,6 +161,8 @@ final class Config {
     final boolean overlayApplied;
     /** Festive skin from a theme (festival, festival_until, greeting, accent_color); {@link Festival#NONE} if none. */
     final Festival festival;
+    /** Seasons and events from a theme's "seasonal" block, with the day Home is built for (see SeasonalConfig). */
+    SeasonalCalendar.Snapshot seasonal = SeasonalCalendar.Snapshot.OFF;
     /** F1 weekends from a theme's race_calendar (see RaceWeekend); empty when the theme has none. */
     final List<RaceWeekend.Race> raceCalendar;
     /** Cinematic top shelf (config.xml, cinematic_home): the focused dock app's artwork behind a larger shelf. */
@@ -446,6 +448,12 @@ final class Config {
         if (rotationMinutes > 0 && dir != null && wallpaperEnabled) {
             wallpapers.addAll(WallpaperRotation.images(new File(dir, "wallpapers")));
         }
+        // A seasonal theme rotates only the day's part of its collection, up to 100 pictures for each season and event.
+        SeasonalCalendar.Snapshot seasonal = SeasonalCalendar.Snapshot.today(SeasonalConfig.fromJson(json));
+        if (rotationMinutes > 0 && dir != null && wallpaperEnabled && seasonal != SeasonalCalendar.Snapshot.OFF) {
+            wallpapers.clear();
+            wallpapers.addAll(SeasonalWallpapers.select(new File(dir, "wallpapers"), seasonal.calendar, seasonal.day));
+        }
         if (wallpapers.isEmpty() && wallpaper != null) wallpapers.add(wallpaper);
         // An on-TV wallpaper pick overrides the theme: a filename from the wallpapers/
         // collection, or "none". Unset means the theme decides (off by default).
@@ -462,7 +470,7 @@ final class Config {
         Festival festival = json == null ? Festival.NONE : Festival.parse(string(json, "festival", ""),
                 string(json, "festival_until", ""), string(json, "greeting", ""), string(json, "accent_color", ""));
 
-        return new Config(dock, fillDock, hidden, libraryApps, liveTv, liveTvAction, liveTvInputId, packageMap(launchActions), packageMap(appLabels),
+        Config config = new Config(dock, fillDock, hidden, libraryApps, liveTv, liveTvAction, liveTvInputId, packageMap(launchActions), packageMap(appLabels),
                 packageMap(appBanners), panelService,
                 panelAction, panelExtra, coocaaSources, inputAction, inputUriScheme,
                 Math.max(1, columns), Math.max(0, rowsBelow), animations, advancedEffects,
@@ -471,6 +479,8 @@ final class Config {
                 wallpapers, rotationMinutes, wallpaperDim, dockOpacity, wallpaperOrder, applied,
                 festival, inputKeycodes, appKeys, stockHomeRedirect, json == null ? Collections.emptyList() : raceCalendar(json), cinematic, ambientGlow, appGlow,
                 Math.max(0, idleClockMinutes), keyFilter, dockGlass, glowStyle, wallpaperCaptions, handleViewInputs, tileMenu, dockEvenPadding);
+        config.seasonal = seasonal;
+        return config;
     }
 
     /**

@@ -24,6 +24,12 @@ public class SeasonalConfigTest {
     }
 
     @Test
+    public void seasonsAreOnUnlessSwitchedOff() {
+        assertEquals(SeasonalCalendar.Season.AUTUMN, SeasonalConfig.build(null, null, null, null).on(HALLOWEEN).season);
+        assertSame(SeasonalCalendar.OFF, SeasonalConfig.build(false, null, null, null));
+    }
+
+    @Test
     public void nothingSetIsOff() {
         assertSame(SeasonalCalendar.OFF, SeasonalConfig.build(false, null, null, null));
         assertSame(SeasonalCalendar.OFF, SeasonalConfig.build(false, "north", Collections.<String>emptyList(),

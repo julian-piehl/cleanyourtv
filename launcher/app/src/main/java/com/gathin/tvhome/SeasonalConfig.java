@@ -26,8 +26,9 @@ import java.util.regex.Pattern;
  * }
  * </pre>
  * Like the rest of the theme, everything is optional and nothing can break Home: a missing or malformed block
- * turns the feature off, a missing key keeps its default (seasons off, northern hemisphere, no events), and an
- * unknown event name or a malformed custom event is skipped on its own.
+ * turns the feature off, a missing key keeps its default (seasons on, northern hemisphere, no events), and an
+ * unknown event name or a malformed custom event is skipped on its own. Seasons are on as soon as the block is
+ * there, so a seasonal theme always has something to show; {@code "seasons": false} switches them off.
  * <p>
  * The JSON walking stays in {@link #fromJson}; {@link #build} takes plain values so it can be unit-tested on the
  * JVM, where Android's org.json is only a stub.
@@ -55,11 +56,11 @@ final class SeasonalConfig {
     }
 
     /**
-     * The calendar for these settings. Built-in events are switched on by name in {@code enabled}; custom events
+     * The calendar for these settings; {@code seasons} null means the default, on. Built-in events are switched on by name in {@code enabled}; custom events
      * are on by being defined and come after them, and a custom event with a built-in event's id replaces that
      * built-in definition in place.
      */
-    static SeasonalCalendar build(boolean seasons, String hemisphere, List<String> enabled, List<Custom> custom) {
+    static SeasonalCalendar build(Boolean seasons, String hemisphere, List<String> enabled, List<Custom> custom) {
         Map<String, SeasonalRule> chosen = new LinkedHashMap<>();
         if (enabled != null) {
             for (String name : enabled) {
@@ -82,7 +83,7 @@ final class SeasonalConfig {
         }
         SeasonalCalendar.Hemisphere h = "south".equals(hemisphere == null ? "" : hemisphere.trim().toLowerCase(Locale.ROOT))
                 ? SeasonalCalendar.Hemisphere.SOUTH : SeasonalCalendar.Hemisphere.NORTH;
-        SeasonalCalendar calendar = new SeasonalCalendar(seasons, h, events);
+        SeasonalCalendar calendar = new SeasonalCalendar(seasons == null || seasons, h, events);
         return calendar.isOff() ? SeasonalCalendar.OFF : calendar;
     }
 
@@ -92,7 +93,7 @@ final class SeasonalConfig {
         if (block == null) return SeasonalCalendar.OFF;
         Object seasons = block.opt("seasons");
         Object hemisphere = block.opt("hemisphere");
-        return build(seasons instanceof Boolean && (Boolean) seasons,
+        return build(seasons instanceof Boolean ? (Boolean) seasons : null,
                 hemisphere instanceof String ? (String) hemisphere : null,
                 strings(block.optJSONArray("events")),
                 customEvents(block.optJSONArray("custom_events")));

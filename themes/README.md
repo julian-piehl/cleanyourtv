@@ -82,6 +82,7 @@ is ignored, and a file that doesn't parse is ignored as a whole, so a theme can 
 | `wallpaper_dim` | 0 to 90 | Black overlay over wallpaper images, in percent; 0 by default and no shade view at all |
 | `dock_opacity` | 30 to 100 | Opacity of the dock's band, in percent, so a wallpaper shows through it; 100 by default (the cinematic shelf keeps its own translucent band). Launcher settings on the TV offers 100, 70, 50 or 30, which wins until the next theme push or Follow theme |
 | `wallpaper_captions` | bool | With a rotating collection, the shown picture's name under the top-right buttons, from `wallpapers/captions.txt` (`001.jpg<TAB>Dusk over the peaks`, one per line); a picture without a line shows no name (`false` by default) |
+| `seasonal` | object | Seasons and events that pick the day's part of a rotating `wallpapers/` collection by filename prefix (`autumn-01.jpg`, `halloween-01.jpg`); see [Seasonal collections](#seasonal-collections). Missing or malformed turns it off |
 | `tile_menu` | bool | Hold OK or press the remote's Menu key on a tile to open a small menu: Move, Remove from Home (with `app_library`) and App info. `false` (the default) keeps holding OK as a shortcut to the app's App info page and leaves Menu unchanged |
 | `festival` | string | Turns on a festive skin: the network pill becomes a diya whose flame follows the connection, Inputs a temple bell, Settings a marigold, and the first Home of the day gets a petal shower. `dussehra` and `diwali` have built-in greetings |
 | `festival_until` | `YYYY-MM-DD` | Last day the festive skin shows; it switches itself off after that. A malformed date turns it off |
@@ -126,7 +127,7 @@ drawn as a black overlay above the picture and below the launcher's text.
 When you apply a theme, its collection replaces the one already on the TV. Use filenames containing
 only letters, digits, underscores, dots and hyphens. Images can come from any source; check that you
 have permission to use them. The launcher considers
-up to 100 nonempty images, at most 10 MB each, skips unreadable files and keeps the last good background.
+up to 100 nonempty images (100 for each season and event in a [seasonal collection](#seasonal-collections)), at most 10 MB each, skips unreadable files and keeps the last good background.
 An empty collection falls back to `wallpaper.jpg`, or the background colour if no image is available.
 `"wallpaper": false` disables both single-image and collection backgrounds.
 
@@ -139,6 +140,42 @@ The original system idle screensaver is left unchanged.
 On the TV, Launcher settings has a Wallpaper row: pick one picture from the collection (or the theme's
 `wallpaper.jpg`), or None. A pick shows that one picture and stops the rotation until you choose Theme
 default, press Follow theme, or push a theme again.
+
+## Seasonal collections
+
+A `"seasonal"` block makes a rotating collection follow the calendar. Pictures are grouped by the part of the
+filename before the first hyphen: `autumn-01.jpg` belongs to autumn, `halloween-01.jpg` to Halloween, and
+`01-dusk-peaks.jpg` to no season or event, which makes it a general picture.
+
+```json
+{
+  "wallpaper": true,
+  "wallpaper_rotation_minutes": 60,
+  "seasonal": {
+    "hemisphere": "north",
+    "events": ["halloween"],
+    "custom_events": [
+      { "id": "birthday", "from": "05-14", "to": "05-14" },
+      { "id": "carnival", "easter": [-52, -47] },
+      { "id": "mothers_day", "nth_weekday": { "month": 5, "weekday": "sun", "n": 2 } },
+      { "id": "diwali", "dates": ["2026-11-08", "2027-10-29"] }
+    ]
+  }
+}
+```
+
+| Key | Meaning |
+|---|---|
+| `hemisphere` | `north` (default) or `south`, which moves the seasons by half a year |
+| `seasons` | Meteorological seasons, whole months: `spring` March to May, `summer` June to August, `autumn` September to November, `winter` December to February (in the north). On by default; `false` switches them off |
+| `events` | Built-in events to switch on by name. So far: `halloween`, 24 October to 1 November |
+| `custom_events` | The theme's own events, on by being defined. Each has an `id` (lower-case letters, digits and `_`, used as the filename prefix) and one rule: `from`/`to` as `MM-DD` every year, also over New Year; `easter` as days before and after Western Easter Sunday; `nth_weekday` with `month`, `weekday` (`mon` to `sun`) and `n` (1 to 5, or -1 for the last); or `dates` as a list of `YYYY-MM-DD` days. An `id` of a built-in event replaces its dates |
+
+A day shows its event's pictures if it has any, otherwise its season's, otherwise the general pictures, and if
+there are none of those either, the whole collection. When events overlap, the shorter one wins, and on a tie the
+one listed first. Pictures of a season or event show only in its own time. Each group rotates through up to 100
+pictures. A season or event that begins or ends while Home is open takes effect the next time Home comes back,
+never while it is on screen. A picture chosen in Launcher settings still wins over the calendar.
 
 ## Reduced motion
 
