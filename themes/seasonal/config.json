@@ -2,6 +2,7 @@
   "wallpaper": true,
   "wallpaper_rotation_minutes": 60,
   "wallpaper_captions": true,
+  "dock_opacity": 50,
   "seasonal": {
     "events": ["halloween"]
   }
