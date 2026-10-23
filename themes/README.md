@@ -145,8 +145,9 @@ default, press Follow theme, or push a theme again.
 ## Seasonal collections
 
 A `"seasonal"` block makes a rotating collection follow the calendar. Pictures are grouped by the part of the
-filename before the first hyphen: `autumn-01.jpg` belongs to autumn, `halloween-01.jpg` to Halloween, and
-`01-dusk-peaks.jpg` to no season or event, which makes it a general picture.
+filename before the first hyphen: `autumn-01.jpg` belongs to autumn and `halloween-01.jpg` to Halloween. A picture
+with only digits before the first hyphen, or without one (`01-dusk-peaks.jpg`), belongs to no season or event: it is
+a general picture, the reserve for days without pictures of their own.
 
 ```json
 {
@@ -174,7 +175,8 @@ filename before the first hyphen: `autumn-01.jpg` belongs to autumn, `halloween-
 
 A day shows its event's pictures if it has any, otherwise its season's, otherwise the general pictures, and if
 there are none of those either, the whole collection. When events overlap, the shorter one wins, and on a tie the
-one listed first. Pictures of a season or event show only in its own time. Each group rotates through up to 100
+one listed first. A picture with a letter in its prefix shows only in its season's or event's time, and never
+when no switched-on season or event has that name. Each group rotates through up to 100
 pictures. A season or event that begins or ends while Home is open takes effect the next time Home comes back,
 never while it is on screen. A picture chosen in Launcher settings still wins over the calendar.
 

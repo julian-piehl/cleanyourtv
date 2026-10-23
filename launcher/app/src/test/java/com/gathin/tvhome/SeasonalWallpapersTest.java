@@ -55,11 +55,26 @@ public class SeasonalWallpapersTest {
     }
 
     @Test
-    public void otherwiseTheGeneralPicturesWithoutReservedPrefixes() {
-        // Spring has no pictures of its own. Only seasons, built-in events and the theme's own events are reserved
-        // prefixes, and no event called christmas exists here, so christmas-01 is a general picture.
-        List<String> spring = on(COLLECTION, "2026-04-10");
-        assertEquals(Arrays.asList("01-dusk-peaks.jpg", "02-golden-coast.jpg", "christmas-01.jpg"), spring);
+    public void otherwiseTheGeneralPicturesWithDigitsOrNoPrefix() {
+        List<File> images = new ArrayList<>(COLLECTION);
+        images.add(new File(DIR, "plain.jpg"));
+        assertEquals(Arrays.asList("01-dusk-peaks.jpg", "02-golden-coast.jpg", "plain.jpg"), on(images, "2026-04-10"));
+    }
+
+    @Test
+    public void aLetterPrefixWithoutItsEventNeverShows() {
+        // No event called christmas exists here, so its picture belongs to nobody's days.
+        for (String date : new String[] {"2026-04-10", "2026-10-10", "2026-10-31", "2026-12-24"}) {
+            assertFalse(date, on(COLLECTION, date).contains("christmas-01.jpg"));
+        }
+    }
+
+    @Test
+    public void generalMeansNoHyphenOrOnlyDigitsBeforeIt() {
+        assertTrue(SeasonalWallpapers.general("01-dusk-peaks.jpg"));
+        assertTrue(SeasonalWallpapers.general("plain.jpg"));
+        assertFalse(SeasonalWallpapers.general("christmas-01.jpg"));
+        assertFalse(SeasonalWallpapers.general("2b-mixed.jpg"));
     }
 
     @Test
@@ -67,6 +82,7 @@ public class SeasonalWallpapersTest {
         List<String> spring = on(COLLECTION, "2026-04-10");
         assertFalse(spring.contains("halloween-01.jpg"));
         assertFalse(spring.contains("winter-01.jpg"));
+        assertFalse(spring.contains("christmas-01.jpg"));
     }
 
     @Test
