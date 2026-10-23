@@ -1,0 +1,8 @@
+{
+  "wallpaper": true,
+  "wallpaper_rotation_minutes": 60,
+  "wallpaper_captions": true,
+  "seasonal": {
+    "events": ["halloween"]
+  }
+}
