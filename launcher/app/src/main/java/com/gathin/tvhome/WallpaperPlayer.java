@@ -269,13 +269,13 @@ final class WallpaperPlayer {
             Bitmap decoded = BitmapFactory.decodeFile(file.getPath(), options);
             if (decoded == null) return null;
             if (dimColor != 0) new Canvas(decoded).drawColor(dimColor);
-            int[] sample = sampling ? SeasonalSkin.sample(decoded) : null;
+            int[] colours = sampling ? SeasonalSkin.sample(decoded) : null;
             // One copy in GPU memory instead of a software bitmap plus its texture; the decode stays off the UI
             // thread for rotations, and Home's return no longer uploads 4-8 MB to the GPU.
             Bitmap gpu = decoded.copy(Bitmap.Config.HARDWARE, false);
             Bitmap result = gpu != null ? gpu : decoded;
             if (gpu != null) decoded.recycle();
-            if (sample != null) samples.put(result, sample);
+            if (colours != null) samples.put(result, colours);
             return result;
         } catch (Exception | OutOfMemoryError failure) {
             return null;
