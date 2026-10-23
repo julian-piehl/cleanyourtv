@@ -47,7 +47,6 @@ final class SeasonalSkin {
     private ValueAnimator blend;
     /** The first picture's colours apply at once; later ones blend. */
     private boolean coloured;
-    private final int[] sample = new int[64 * 24];
 
     private SeasonalSkin(Context context, SeasonalLook look, boolean reducedMotion) {
         this.context = context;
@@ -134,16 +133,27 @@ final class SeasonalSkin {
         if (sink != null && recolours()) sink.accept(accent);
     }
 
-    /** A new wallpaper picture is on screen: work out its colours and blend over to them. */
-    void onPicture(Bitmap picture) {
-        if (!active() || picture == null || picture.isRecycled()) return;
-        int w = picture.getWidth(), h = picture.getHeight() * 2 / 3, n = 0;
-        if (w <= 0 || h <= 0) return;
-        for (int y = 0; y < 24; y++) {
-            for (int x = 0; x < 64; x++) {
-                sample[n++] = picture.getPixel(Math.min(w - 1, x * w / 64 + w / 128), Math.min(h - 1, y * h / 24 + h / 48));
-            }
+    /**
+     * A small sample of a software bitmap for {@link #onPicture}: the picture scaled to 64 x 36, its upper two thirds
+     * (the sky and the scene; the dock covers the rest). Called on the decoder's thread, before the picture becomes a
+     * HARDWARE bitmap whose pixels can no longer be read. Null if the picture cannot be read.
+     */
+    static int[] sample(Bitmap software) {
+        try {
+            Bitmap small = Bitmap.createScaledBitmap(software, 64, 36, true);
+            int[] px = new int[64 * 24];
+            small.getPixels(px, 0, 64, 0, 0, 64, 24);
+            if (small != software) small.recycle();
+            return px;
+        } catch (RuntimeException e) {
+            return null;
         }
+    }
+
+    /** A new wallpaper picture is on screen, as its sample: work out its colours and blend over to them. */
+    void onPicture(int[] sample) {
+        if (!active() || sample == null) return;
+        int n = sample.length;
         int toAccent = look.accentKind == SeasonalLook.ACCENT_AUTO ? SeasonalLook.contrastAccent(sample, n) : accent;
         int toGreeting = SeasonalLook.matchingColour(sample, n);
         blendTo(toAccent, toGreeting);

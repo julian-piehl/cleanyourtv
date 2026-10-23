@@ -50,8 +50,15 @@ final class WallpaperPlayer {
     /** wallpaper_captions: the shown picture's name from wallpapers/captions.txt; null when off or there are none. */
     private final TextView caption;
     private final Map<String, String> names;
-    /** Told about every picture that goes on screen (the seasonal skin takes its colours from it). */
-    private java.util.function.Consumer<Bitmap> pictureListener;
+    /**
+     * The seasonal skin takes its colours from each picture. Pictures end up as HARDWARE bitmaps, whose pixels cannot
+     * be read, so a small sample is taken from the software decode first and handed over when the picture shows.
+     */
+    private final boolean sampling;
+    private final java.util.Map<Bitmap, int[]> samples =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+    private int[] currentSample;
+    private java.util.function.Consumer<int[]> pictureListener;
 
     WallpaperPlayer(Context context, FrameLayout root, Config config) {
         this.root = root;
@@ -75,6 +82,7 @@ final class WallpaperPlayer {
         image = new ImageView(context);
         image.setScaleType(ImageView.ScaleType.CENTER_CROP);
         image.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        sampling = !config.seasonalLook.isNone();
         names = config.wallpaperCaptions && config.wallpaperEnabled && !files.isEmpty()
                 ? WallpaperCaptions.read(files.get(0).getParentFile()) : Collections.emptyMap();
         caption = names.isEmpty() ? null : makeCaption(context, root);
@@ -221,17 +229,21 @@ final class WallpaperPlayer {
     }
 
     /** Puts a picture on screen and releases the previous one after a frame has drawn the new one. */
-    /** Calls {@code listener} with the picture on screen now, if any, and with each one after it. */
-    void setPictureListener(java.util.function.Consumer<Bitmap> listener) {
+    /** Calls {@code listener} with the sample of the picture on screen now, if any, and of each one after it. */
+    void setPictureListener(java.util.function.Consumer<int[]> listener) {
         pictureListener = listener;
-        if (listener != null && current != null) listener.accept(current);
+        if (listener != null && currentSample != null) listener.accept(currentSample);
     }
 
     private void show(Bitmap bitmap) {
         Bitmap old = current;
         current = bitmap;
         image.setImageBitmap(bitmap);
-        if (pictureListener != null) pictureListener.accept(bitmap);
+        int[] sample = samples.remove(bitmap);
+        if (sample != null) {
+            currentSample = sample;
+            if (pictureListener != null) pictureListener.accept(sample);
+        }
         if (old != null && old != bitmap) image.postDelayed(old::recycle, 500);
     }
 
@@ -257,12 +269,14 @@ final class WallpaperPlayer {
             Bitmap decoded = BitmapFactory.decodeFile(file.getPath(), options);
             if (decoded == null) return null;
             if (dimColor != 0) new Canvas(decoded).drawColor(dimColor);
+            int[] sample = sampling ? SeasonalSkin.sample(decoded) : null;
             // One copy in GPU memory instead of a software bitmap plus its texture; the decode stays off the UI
             // thread for rotations, and Home's return no longer uploads 4-8 MB to the GPU.
             Bitmap gpu = decoded.copy(Bitmap.Config.HARDWARE, false);
-            if (gpu == null) return decoded;
-            decoded.recycle();
-            return gpu;
+            Bitmap result = gpu != null ? gpu : decoded;
+            if (gpu != null) decoded.recycle();
+            if (sample != null) samples.put(result, sample);
+            return result;
         } catch (Exception | OutOfMemoryError failure) {
             return null;
         }
