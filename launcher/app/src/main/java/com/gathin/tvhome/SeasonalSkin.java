@@ -104,7 +104,7 @@ final class SeasonalSkin {
 
     /** 0 offline, 1 to 4 the signal; Ethernet counts as 4. */
     void setWifiLevel(int level) {
-        if (wifiIcon != null) wifiIcon.setLevel(level);
+        if (wifiIcon != null) wifiIcon.setSignal(level);
     }
 
     // ---- greeting ------------------------------------------------------------------------------------

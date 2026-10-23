@@ -163,7 +163,7 @@ public final class HalloweenIconDrawable extends Drawable {
     }
 
     /** The Wi-Fi level the bat shows: 0 offline, 1 to 4. Only the bat icon uses it. */
-    void setLevel(int level) {
+    void setSignal(int level) {
         int l = Math.max(0, Math.min(4, level));
         if (this.level == l) return;
         this.level = l;
