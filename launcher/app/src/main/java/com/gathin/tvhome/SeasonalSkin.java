@@ -212,7 +212,7 @@ final class SeasonalSkin {
             root.addView(swarm, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             swarm.play(SWARM_BATS, SWARM_MS, () -> root.removeView(swarm));
-        }, 350);
+        }, 100);   // just long enough for Home's first frame
     }
 
     /** Home went to the background. */

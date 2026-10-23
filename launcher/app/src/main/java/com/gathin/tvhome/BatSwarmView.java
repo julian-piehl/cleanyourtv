@@ -75,7 +75,9 @@ public final class BatSwarmView extends View {
         duration = Math.max(1, durationMs);
         onDone = done;
         for (int i = 0; i < n; i++) {
-            delay[i] = rnd.nextFloat() * 0.45f;                  // fractions of the duration
+            // Fractions of the duration. Startled bats go up in one rush: most leave in the first quarter, and every
+            // third is already in the air when Home appears (a negative delay starts it part-way along its flight).
+            delay[i] = i % 3 == 0 ? -(0.05f + rnd.nextFloat() * 0.12f) : rnd.nextFloat() * 0.25f;
             life[i] = 1f - delay[i] - rnd.nextFloat() * 0.1f;
             flapHz[i] = 6f + rnd.nextFloat() * 2.5f;
             flapPh[i] = rnd.nextFloat() * 6.28f;
@@ -161,7 +163,7 @@ public final class BatSwarmView extends View {
             float sx = (CX + x / z[i] * F) * k, sy = (CY + y / z[i] * F) * ky, px = span[i] / z[i] * F * k;
             if (sx < -px || sx > getWidth() + px || sy < -px || sy > getHeight() + px) continue;
             float flap = (float) Math.sin(secs * flapHz[i] * 6.2832f + flapPh[i]);
-            paint.setAlpha(Math.round(255 * Math.min(1f, u[i] * 6f) * (z[i] > 4f ? 0.75f : 1f)));
+            paint.setAlpha(Math.round(255 * Math.min(1f, u[i] * 12f) * (z[i] > 4f ? 0.75f : 1f)));
             int save = canvas.save();
             canvas.translate(sx, sy);
             canvas.rotate((float) Math.toDegrees(tilt[i] + vx[i] * 0.12f + flap * 0.05f));
