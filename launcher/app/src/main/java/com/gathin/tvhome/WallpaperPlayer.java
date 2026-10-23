@@ -50,6 +50,8 @@ final class WallpaperPlayer {
     /** wallpaper_captions: the shown picture's name from wallpapers/captions.txt; null when off or there are none. */
     private final TextView caption;
     private final Map<String, String> names;
+    /** Told about every picture that goes on screen (the seasonal skin takes its colours from it). */
+    private java.util.function.Consumer<Bitmap> pictureListener;
 
     WallpaperPlayer(Context context, FrameLayout root, Config config) {
         this.root = root;
@@ -219,10 +221,17 @@ final class WallpaperPlayer {
     }
 
     /** Puts a picture on screen and releases the previous one after a frame has drawn the new one. */
+    /** Calls {@code listener} with the picture on screen now, if any, and with each one after it. */
+    void setPictureListener(java.util.function.Consumer<Bitmap> listener) {
+        pictureListener = listener;
+        if (listener != null && current != null) listener.accept(current);
+    }
+
     private void show(Bitmap bitmap) {
         Bitmap old = current;
         current = bitmap;
         image.setImageBitmap(bitmap);
+        if (pictureListener != null) pictureListener.accept(bitmap);
         if (old != null && old != bitmap) image.postDelayed(old::recycle, 500);
     }
 

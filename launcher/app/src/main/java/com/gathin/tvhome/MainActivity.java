@@ -215,6 +215,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private Festival festival = Festival.NONE;
     /** Seasons and events from the theme, and the day Home was built for (see SeasonalCalendar). */
     private SeasonalCalendar.Snapshot seasonal = SeasonalCalendar.Snapshot.OFF;
+    /** Today's seasonal look on Home: icons, accent, greeting, swarm (see SeasonalSkin); a festival takes precedence. */
+    private SeasonalSkin skin = SeasonalSkin.NONE;
     private boolean festive;
     private DiyaDrawable diya;
     private BellDrawable bell;
@@ -336,7 +338,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             updateRace();
             // The pill follows the network callbacks and each return to Home; only the diya's flame follows the
             // signal level, so only it needs this minute's binder calls (about 7 ms on the UI thread).
-            if (festive) updateWifiLabel();
+            if (festive || skin.ownsWifiIcon()) updateWifiLabel();
             sky.update();
             wallpaperPlayer.update();
             handler.postDelayed(this, MINUTE_MS);
@@ -366,6 +368,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         festival = cfg.festival;
         festive = festival.active(LocalDate.now());
         seasonal = cfg.seasonal;
+        skin = festive ? SeasonalSkin.NONE : SeasonalSkin.create(this, cfg.seasonalLook, reducedMotion);
         liveTvPkg = cfg.liveTvPackage;
         idleClockMs = cfg.homeIdleClockMinutes * MINUTE_MS;
         bootToLiveTv = cfg.bootToLiveTv;
@@ -391,6 +394,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         sky.setIntensity(cfg.skyIntensity);
         glass = findViewById(R.id.glass);
         if (festive) glass.setAccent(festival.accentColor());
+        skin.setAccentSink(a -> {
+            if (!reordering) glass.setAccent(a);
+        });
+        wallpaperPlayer.setPictureListener(skin::onPicture);
         ambient = findViewById(R.id.ambient);
         // The glow is one bitmap, so its alpha can be applied while drawing it. Otherwise every frame of
         // a fade renders it into a full-screen offscreen buffer first.
@@ -413,6 +420,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // still follows the dock.
         if (!cfg.dockTitle) hero.setVisibility(View.GONE);
         greeting = findViewById(R.id.greeting);
+        skin.bindGreeting(greeting);
         clockBlock = findViewById(R.id.leftBlock);
         greetingColor = greeting.getCurrentTextColor();
         if (getResources().getBoolean(R.bool.rtl_menu_bar)) {
@@ -671,6 +679,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             }
         }
         if (festive) applyFestiveSkin((TextView) btnInputs, (TextView) btnSettings);
+        else skin.applyIcons((TextView) btnInputs, btnWifi, (TextView) btnSettings);
 
         // Hide the glass when focus leaves the tiles.
         getWindow().getDecorView().getViewTreeObserver().addOnGlobalFocusChangeListener((oldF, newF) -> {
@@ -854,6 +863,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 handler.postDelayed(this::playPetalShower, 450);
             }
         }
+        skin.onHomeShown(root);
     }
 
     /** Launcher settings' change count (Config.SETTINGS_REVISION_KEY); onResume rebuilds Home when it moved. */
@@ -1021,6 +1031,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         handler.removeCallbacks(minuteTick);
         stopStats();
         if (diya != null) diya.stop();
+        skin.onHomeHidden();
         cancelPendingFocusScroll();
         // Nothing of ours stays on screen over another app; an undecided prompt simply returns next time.
         if (cardPrompt != null) cardPrompt.dismiss();
@@ -1339,7 +1350,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         drop();
         reordering = false;
         adapter.setReordering(false);
-        glass.setAccent(festive ? festival.accentColor() : 0);
+        glass.setAccent(festive ? festival.accentColor() : skin.accent());
         btnReorder.setActivated(false);
         List<String> keys = adapter.movableKeys();
         List<String> before = orderAtStart;
@@ -1491,9 +1502,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         glassTargetX = x;
         glassTargetY = y;
         // Cinematic shelf: the highlight glows in the dock app's colour, plain white in the grid. app_glow: every tile.
-        boolean coloured = (appGlow || cinematic && position < COLUMNS) && !festive;
+        boolean coloured = (appGlow || cinematic && position < COLUMNS) && !festive && !skin.recolours();
         int accent = coloured ? adapter.ambientColorAt(position) : 0;
-        if ((cinematic || appGlow) && !festive && accent != glassAccent) {
+        if ((cinematic || appGlow) && !festive && !skin.recolours() && accent != glassAccent) {
             glassAccent = accent;
             glass.setAccent(accent);
         }
@@ -2238,9 +2249,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             else res = R.string.good_night;
         }
         String festiveGreeting = festive ? festival.greetingText(getResources()) : "";
+        String seasonalGreeting = skin.greetingText(getResources());
         if (!festiveGreeting.isEmpty()) {
             greeting.setText(festiveGreeting);
             greeting.setTextColor(liftTowardsWhite(festival.accentColor(), 0.25f));
+        } else if (seasonalGreeting != null) {
+            greeting.setText(seasonalGreeting);
+            greeting.setTextColor(skin.greetingColour());
         } else {
             greeting.setText(greetingName.isEmpty() ? getString(res)
                     : getString(R.string.greeting_with_name, getString(res), greetingName));
@@ -2397,6 +2412,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             if (online && flame == 0) flame = 3;   // online some other way (cellular, USB tethering)
             diya.setSteady(steady);
             diya.setFlame(flame);
+        } else if (skin.ownsWifiIcon()) {
+            if (online && flame == 0) flame = 3;   // online some other way (cellular, USB tethering)
+            skin.setWifiLevel(flame);
         } else {
             if (icon != wifiIcon) {
                 wifiIcon = icon;

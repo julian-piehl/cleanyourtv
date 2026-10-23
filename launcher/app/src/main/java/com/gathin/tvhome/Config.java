@@ -163,6 +163,8 @@ final class Config {
     final Festival festival;
     /** Seasons and events from a theme's "seasonal" block, with the day Home is built for (see SeasonalConfig). */
     SeasonalCalendar.Snapshot seasonal = SeasonalCalendar.Snapshot.OFF;
+    /** How Home looks during today's seasonal event (see SeasonalLook); NONE without one. */
+    SeasonalLook seasonalLook = SeasonalLook.NONE;
     /** F1 weekends from a theme's race_calendar (see RaceWeekend); empty when the theme has none. */
     final List<RaceWeekend.Race> raceCalendar;
     /** Cinematic top shelf (config.xml, cinematic_home): the focused dock app's artwork behind a larger shelf. */
@@ -480,6 +482,7 @@ final class Config {
                 festival, inputKeycodes, appKeys, stockHomeRedirect, json == null ? Collections.emptyList() : raceCalendar(json), cinematic, ambientGlow, appGlow,
                 Math.max(0, idleClockMinutes), keyFilter, dockGlass, glowStyle, wallpaperCaptions, handleViewInputs, tileMenu, dockEvenPadding);
         config.seasonal = seasonal;
+        config.seasonalLook = SeasonalLook.fromJson(json, seasonal.day.event);
         return config;
     }
 

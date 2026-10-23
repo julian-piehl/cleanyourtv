@@ -13,6 +13,11 @@ Working notes for the `seasonal` branch. Remove this file before opening a pull 
   four sets: spring, summer, autumn, winter.
 - **Countdown** under the clock ("3 nights to Halloween"), modelled on the race-weekend panel. Wanted later, for
   Halloween and Christmas.
+- **Swarm setting on the TV**: how often the swarm plays is set in the theme's `looks` for now. A row in Launcher
+  settings (all events, reset by Follow theme) is wanted later.
+- **Translations**: the Halloween greeting is English only for now (`values/strings_seasonal.xml`), also on German
+  TVs by choice. Other languages later.
+- **Festivals**: Dussehra and Diwali still use their own festive skin; migrate them to seasonal events and looks later.
 - **Build-up towards the day** and **day/night variants** for events: not now, maybe later.
 - **Wallpaper generators** (`halloween_wallpapers.py`, `render_wallpapers.py`) are not in the repo yet; adding them
   to `tools/` needs rows in the README's tools table.

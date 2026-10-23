@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings of the seasonal themes (SeasonalSkin), kept apart from strings.xml so the many translation
+     changes there merge without touching these. -->
+<resources>
+    <!-- The greeting during Halloween, in place of "Good evening". -->
+    <string name="seasonal_halloween_greeting">Happy Halloween</string>
+</resources>
