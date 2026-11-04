@@ -355,39 +355,63 @@ final class SnowLayer {
         c.drawCircle(flakeX(i) * k, y[i] * k, r[i] * k, flakePaint);
     }
 
+    /** Snow thinner than this (reference units) is not drawn, so bare stretches of an edge stay bare. */
+    private static final float BARE = 0.15f;
+    /** How far the snow reaches down over the edge, at most, so no seam shows between it and the ledge. */
+    private static final float OVERLAP = 0.8f;
+
     private void drawCaps(Canvas c, float k) {
+        capPaint.setAlpha(247);
         for (int i = 0; i < ledgeCount; i++) {
             Ledge l = ledges.get(i);
             SnowPiles.Cap cap = l.cap;
             if (cap.empty()) continue;
-            int cols = cap.cols;
-            float w = l.rect.width();
-            capPath.rewind();
-            // upper edge: a smooth curve through the midpoints of the columns, over the outline
-            float px = 0, py = 0;
-            for (int j = 0; j < cols; j++) {
-                SnowPiles.outline(j, cols, w, l.radius, outline);
-                float cx = l.rect.left + (j + 0.5f) / cols * w;
-                float cy = l.rect.top + outline[0] - SnowPiles.smoothed(cap, j) * outline[1] * l.scale;
-                if (j == 0) {
-                    capPath.moveTo(cx * k, (l.rect.top + outline[0] + 0.5f) * k);
-                    capPath.lineTo(cx * k, cy * k);
-                } else {
-                    capPath.quadTo(px * k, py * k, (px + cx) / 2 * k, (py + cy) / 2 * k);
-                }
-                px = cx;
-                py = cy;
+            // Only where snow lies: each run of columns with snow is its own drift, starting and ending at the edge.
+            int j = 0;
+            while (j < cap.cols) {
+                while (j < cap.cols && height(l, j) < BARE) j++;
+                if (j == cap.cols) break;
+                int first = j;
+                while (j < cap.cols && height(l, j) >= BARE) j++;
+                drawRun(c, l, first, j - 1, k);
             }
-            capPath.lineTo(px * k, py * k);
-            // lower edge: back along the outline
-            for (int j = cols - 1; j >= 0; j--) {
-                SnowPiles.outline(j, cols, w, l.radius, outline);
-                capPath.lineTo((l.rect.left + (j + 0.5f) / cols * w) * k, (l.rect.top + outline[0] + 0.8f) * k);
-            }
-            capPath.close();
-            capPaint.setAlpha(247);
-            c.drawPath(capPath, capPaint);
         }
+    }
+
+    /** The snow's height drawn at column {@code j} of a ledge, in reference units at its current zoom. */
+    private float height(Ledge l, int j) {
+        SnowPiles.outline(j, l.cap.cols, l.rect.width(), l.radius, outline);
+        return SnowPiles.smoothed(l.cap, j) * outline[1] * l.scale;
+    }
+
+    /** One drift from column {@code first} to {@code last}: a curve over its heights, back along the edge below. */
+    private void drawRun(Canvas c, Ledge l, int first, int last, float k) {
+        int cols = l.cap.cols;
+        float w = l.rect.width(), half = w / cols / 2;
+        capPath.rewind();
+        // the drift begins half a column out, on the edge, so its ends taper instead of standing up square
+        SnowPiles.outline(first, cols, w, l.radius, outline);
+        float x0 = l.rect.left + (first + 0.5f) / cols * w - half;
+        capPath.moveTo(x0 * k, (l.rect.top + outline[0]) * k);
+        float px = x0, py = l.rect.top + outline[0];
+        for (int j = first; j <= last; j++) {
+            float h = height(l, j);   // also leaves this column's outline in outline[]
+            float cx = l.rect.left + (j + 0.5f) / cols * w, cy = l.rect.top + outline[0] - h;
+            capPath.quadTo(px * k, py * k, (px + cx) / 2 * k, (py + cy) / 2 * k);
+            px = cx;
+            py = cy;
+        }
+        SnowPiles.outline(last, cols, w, l.radius, outline);
+        float xe = l.rect.left + (last + 0.5f) / cols * w + half, ye = l.rect.top + outline[0];
+        capPath.quadTo(px * k, py * k, xe * k, ye * k);
+        // back along the edge, reaching a little down over it where the snow is thick enough
+        for (int j = last; j >= first; j--) {
+            float h = height(l, j);
+            capPath.lineTo((l.rect.left + (j + 0.5f) / cols * w) * k,
+                    (l.rect.top + outline[0] + Math.min(OVERLAP, h)) * k);
+        }
+        capPath.close();
+        c.drawPath(capPath, capPaint);
     }
 
     // ---- the two views ---------------------------------------------------------------------------------
