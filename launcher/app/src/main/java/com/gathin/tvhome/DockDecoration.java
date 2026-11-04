@@ -19,6 +19,9 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
     private final Paint band = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint edge = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF rect = new RectF();
+    /** The band as last drawn, for the seasonal snow that settles on it (SnowLayer): in the grid's coordinates. */
+    private boolean drawn;
+    private float drawnRadius;
 
     /** Extra band below the tiles for their names (always_show_names), in px. */
     private final float namesRoom;
@@ -61,6 +64,15 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
         edge.setColor(lightGlass ? 0x38FFFFFF : translucent ? 0x26FFFFFF : 0x1FFFFFFF);
     }
 
+    /** The band's rectangle as last drawn, in the grid's coordinates, or null when none was drawn. */
+    RectF band() {
+        return drawn ? rect : null;
+    }
+
+    float bandRadius() {
+        return drawnRadius;
+    }
+
     /** Concentric corners: the band's radius is the tiles' radius plus the band's padding around them. */
     static float radiusPx(float tileRadiusPx, float paddingPx) {
         return tileRadiusPx + paddingPx;
@@ -87,6 +99,7 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
 
     @Override
     public void onDraw(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+        drawn = false;
         if (!bandVisible) return;
         boolean any = false;
         int cardWidth = 0;
@@ -148,5 +161,7 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
         }
         c.drawRoundRect(rect, radius, radius, band);
         c.drawRoundRect(rect, radius, radius, edge);
+        drawn = true;
+        drawnRadius = radius;
     }
 }

@@ -692,8 +692,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             public void onChildViewDetachedFromWindow(@NonNull View v) {
             }
         });
-        if (dockRow) grid.addItemDecoration(new DockDecoration(COLUMNS, density, cinematic, cfg.alwaysShowNames, cfg.dockOpacity, cfg.dockGlass, cfg.dockEvenPadding, cfg.dockBand,
-                singleRow, cfg.dockBandAll));
+        DockDecoration dockBand = dockRow ? new DockDecoration(COLUMNS, density, cinematic, cfg.alwaysShowNames,
+                cfg.dockOpacity, cfg.dockGlass, cfg.dockEvenPadding, cfg.dockBand, singleRow, cfg.dockBandAll) : null;
+        if (dockBand != null) grid.addItemDecoration(dockBand);
+        skin.attachSnow(root, findViewById(R.id.topButtons), grid, dockBand);
         if (cfg.fadeRows) TopFade.attach(grid, 48 * density);
         // Reduced motion: the tiles are simply there, with no entrance (reloadApps skips it there too).
         if (animations && !reducedMotion) {
@@ -1102,7 +1104,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         // Likewise a season or a seasonal event (SeasonalCalendar): Home is rebuilt on return, never while in view.
         if (seasonal.stale()) {
-            recreate();
+            skin.meltThen(this::recreate);   // snow on Home melts away before the new look
             return;
         }
         // Something changed in Launcher settings: rebuild with it, however the settings were left. Only Back

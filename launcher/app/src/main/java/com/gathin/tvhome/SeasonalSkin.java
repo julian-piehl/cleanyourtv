@@ -41,6 +41,8 @@ final class SeasonalSkin {
     private final ArgbEvaluator argb = new ArgbEvaluator();
     /** Holds the effect until the screen shows a picture (after standby); null for NONE. */
     private final ScreenWake wake;
+    /** The look's quiet snow and the snow piling up on Home; null without them. */
+    private SnowLayer snow;
 
     private SeasonalIconDrawable inputsIcon, wifiIcon, settingsIcon;
     private TextView greeting;
@@ -212,10 +214,34 @@ final class SeasonalSkin {
         return 0xFF000000 | (r << 16) | (g << 8) | b;
     }
 
+    // ---- snow -----------------------------------------------------------------------------------------
+
+    /**
+     * Puts the look's snow on Home: falling behind the tiles and piling up on the top-bar buttons ({@code topButtons}),
+     * the dock band and the tiles of {@code grid}. Nothing with reduced_motion.
+     */
+    void attachSnow(FrameLayout root, android.view.View topButtons, androidx.recyclerview.widget.RecyclerView grid,
+                    DockDecoration dockBand) {
+        if (!active() || reducedMotion || root == null || (!look.snow && !look.snowPiles) || snow != null) return;
+        String theme = context.getSharedPreferences(Config.SETTINGS_NAME, Context.MODE_PRIVATE)
+                .getString(Config.THEME_SIGNATURE_KEY, "");
+        snow = new SnowLayer(context, root, topButtons instanceof android.view.ViewGroup
+                ? (android.view.ViewGroup) topButtons : null, grid, dockBand,
+                look.snowFlakes, look.snow, look.snowPiles, context.getSharedPreferences(PREFS, Context.MODE_PRIVATE),
+                theme);
+    }
+
+    /** Melts the snow lying on Home, then runs {@code next}; at once when there is none. */
+    void meltThen(Runnable next) {
+        if (snow == null || !snow.hasSnow()) next.run();
+        else snow.melt(next);
+    }
+
     // ---- the effect when Home opens -----------------------------------------------------------------
 
     /** Home came to the front: plays the event's effect over {@code root} if the look's schedule says it is due. */
     void onHomeShown(FrameLayout root) {
+        if (snow != null) snow.start();
         // Halloween's bats are the only effect so far.
         if (!active() || reducedMotion || root == null || !SeasonalLook.HALLOWEEN.equals(look.event)) return;
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
@@ -238,10 +264,12 @@ final class SeasonalSkin {
         hiddenAt = SystemClock.elapsedRealtime();
         if (blend != null) blend.cancel();
         if (wake != null) wake.cancel();
+        if (snow != null) snow.stop();
     }
 
     /** Home is going away for good. */
     void close() {
         if (wake != null) wake.close();
+        if (snow != null) snow.close();
     }
 }

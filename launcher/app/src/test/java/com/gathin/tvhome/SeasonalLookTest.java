@@ -35,13 +35,13 @@ public class SeasonalLookTest {
     @Test
     public void noEventIsNone() {
         assertSame(SeasonalLook.NONE, SeasonalLook.defaults(null));
-        assertSame(SeasonalLook.NONE, SeasonalLook.build(null, "auto", "Hi", true, "always"));
+        assertSame(SeasonalLook.NONE, SeasonalLook.build(null, "auto", "Hi", true, "always", null, null, null));
         assertTrue(SeasonalLook.NONE.isNone());
     }
 
     @Test
     public void themeValuesOverrideSingleKeys() {
-        SeasonalLook l = SeasonalLook.build("halloween", "#102030", "  Boo! ", false, "after_break");
+        SeasonalLook l = SeasonalLook.build("halloween", "#102030", "  Boo! ", false, "after_break", null, null, null);
         assertEquals(SeasonalLook.ACCENT_FIXED, l.accentKind);
         assertEquals(0xFF102030, l.accent);
         assertEquals("Boo!", l.greeting);
@@ -51,24 +51,24 @@ public class SeasonalLookTest {
 
     @Test
     public void missingAndBrokenValuesKeepTheDefaults() {
-        SeasonalLook l = SeasonalLook.build("halloween", "orange", 42, "yes", "sometimes");
+        SeasonalLook l = SeasonalLook.build("halloween", "orange", 42, "yes", "sometimes", null, null, null);
         assertEquals(SeasonalLook.ACCENT_AUTO, l.accentKind);
         assertEquals("", l.greeting);
         assertTrue(l.icons);
         assertEquals(SeasonalLook.Effect.ALWAYS, l.effect);
-        SeasonalLook m = SeasonalLook.build("halloween", null, null, null, null);
+        SeasonalLook m = SeasonalLook.build("halloween", null, null, null, null, null, null, null);
         assertEquals(SeasonalLook.ACCENT_AUTO, m.accentKind);
     }
 
     @Test
     public void greetingFalseKeepsTheTimeOfDayGreeting() {
-        assertNull(SeasonalLook.build("halloween", null, false, null, null).greeting);
-        assertEquals("", SeasonalLook.build("birthday", null, true, null, null).greeting);
+        assertNull(SeasonalLook.build("halloween", null, false, null, null, null, null, null).greeting);
+        assertEquals("", SeasonalLook.build("birthday", null, true, null, null, null, null, null).greeting);
     }
 
     @Test
     public void accentOffAndSwarmOff() {
-        SeasonalLook l = SeasonalLook.build("halloween", " OFF ", null, null, "off");
+        SeasonalLook l = SeasonalLook.build("halloween", " OFF ", null, null, "off", null, null, null);
         assertEquals(SeasonalLook.ACCENT_OFF, l.accentKind);
         assertEquals(SeasonalLook.Effect.OFF, l.effect);
     }
@@ -83,6 +83,22 @@ public class SeasonalLookTest {
         assertEquals(SeasonalLook.Effect.OFF, l.effect);
         assertEquals(SeasonalLook.CHRISTMAS_RED,
                 SeasonalLook.contrastAccent(filled(0x1C2A6A, 10), 10, l.onWarm, l.onCool));
+    }
+
+    @Test
+    public void snowIsChristmasOnlyAndCanBeChanged() {
+        SeasonalLook x = SeasonalLook.defaults(SeasonalLook.CHRISTMAS);
+        assertTrue(x.snow);
+        assertTrue(x.snowPiles);
+        assertEquals(SeasonalLook.DEFAULT_FLAKES, x.snowFlakes);
+        assertFalse(SeasonalLook.defaults(SeasonalLook.HALLOWEEN).snow);
+        SeasonalLook y = SeasonalLook.build(SeasonalLook.CHRISTMAS, null, null, null, null, false, 140, false);
+        assertFalse(y.snow);
+        assertFalse(y.snowPiles);
+        assertEquals(140, y.snowFlakes);
+        SeasonalLook z = SeasonalLook.build(SeasonalLook.CHRISTMAS, null, null, null, null, "yes", 9000, null);
+        assertTrue(z.snow);
+        assertEquals(SeasonalLook.DEFAULT_FLAKES, z.snowFlakes);
     }
 
     @Test

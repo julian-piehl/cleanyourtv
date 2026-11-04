@@ -24,9 +24,12 @@ import java.util.Locale;
  *   <li>{@code effect}: how often the event's effect plays when Home opens (Halloween's bats): {@code "off"},
  *       {@code "daily"} (the first Home of the day), {@code "after_break"} (Home was away for an hour or more) or
  *       {@code "always"}.</li>
+ *   <li>{@code snow}: quiet snow falling behind the tiles, with a few large flakes in front; {@code snow_flakes} how
+ *       many (0 to {@link #MAX_FLAKES}); {@code snow_piles}: the snow settles on the top edges of the buttons, the
+ *       dock and the tiles, from bare at each switch-on. See SnowLayer.</li>
  * </ul>
  * Built-in events have their own defaults (Halloween: all on, the bats on every Home; Christmas: accent, greeting and
- * icons, no effect); a theme changes single keys and the rest keep them. Events without built-in defaults start with
+ * icons, snow that piles up, no effect); a theme changes single keys and the rest keep them. Events without built-in defaults start with
  * everything off. A key of the wrong type or with an unknown value keeps its default.
  */
 final class SeasonalLook {
@@ -44,8 +47,12 @@ final class SeasonalLook {
     static final int CHRISTMAS_RED = 0xFFFF4F5E;
     static final int ICE_BLUE = 0xFF8FD8FF;
 
+    /** Flakes behind the tiles by default, and the most a theme may ask for. */
+    static final int DEFAULT_FLAKES = 90, MAX_FLAKES = 300;
+
     /** Nothing seasonal: plain Home. */
-    static final SeasonalLook NONE = new SeasonalLook(null, ACCENT_OFF, 0, 0, 0, null, false, Effect.OFF);
+    static final SeasonalLook NONE = new SeasonalLook(null, ACCENT_OFF, 0, 0, 0, null, false, Effect.OFF, false,
+            DEFAULT_FLAKES, false);
 
     /** The event this look belongs to, or null for {@link #NONE}. */
     final String event;
@@ -58,9 +65,12 @@ final class SeasonalLook {
     final String greeting;
     final boolean icons;
     final Effect effect;
+    final boolean snow;
+    final int snowFlakes;
+    final boolean snowPiles;
 
     SeasonalLook(String event, int accentKind, int accent, int onWarm, int onCool, String greeting, boolean icons,
-                 Effect effect) {
+                 Effect effect, boolean snow, int snowFlakes, boolean snowPiles) {
         this.event = event;
         this.accentKind = accentKind;
         this.accent = accent;
@@ -69,25 +79,32 @@ final class SeasonalLook {
         this.greeting = greeting;
         this.icons = icons;
         this.effect = effect;
+        this.snow = snow;
+        this.snowFlakes = snowFlakes;
+        this.snowPiles = snowPiles;
     }
 
     /** The look an event has without any theme settings. */
     static SeasonalLook defaults(String event) {
         if (event == null) return NONE;
         if (HALLOWEEN.equals(event)) {
-            return new SeasonalLook(event, ACCENT_AUTO, 0, WITCH_PURPLE, PUMPKIN_ORANGE, "", true, Effect.ALWAYS);
+            return new SeasonalLook(event, ACCENT_AUTO, 0, WITCH_PURPLE, PUMPKIN_ORANGE, "", true, Effect.ALWAYS,
+                    false, DEFAULT_FLAKES, false);
         }
         if (CHRISTMAS.equals(event)) {
-            return new SeasonalLook(event, ACCENT_AUTO, 0, ICE_BLUE, CHRISTMAS_RED, "", true, Effect.OFF);
+            return new SeasonalLook(event, ACCENT_AUTO, 0, ICE_BLUE, CHRISTMAS_RED, "", true, Effect.OFF,
+                    true, DEFAULT_FLAKES, true);
         }
-        return new SeasonalLook(event, ACCENT_OFF, 0, PUMPKIN_ORANGE, WITCH_PURPLE, null, false, Effect.OFF);
+        return new SeasonalLook(event, ACCENT_OFF, 0, PUMPKIN_ORANGE, WITCH_PURPLE, null, false, Effect.OFF,
+                false, DEFAULT_FLAKES, false);
     }
 
     /**
      * The event's defaults with the theme's values over them. Each argument is the raw JSON value, or null when the
      * key is missing.
      */
-    static SeasonalLook build(String event, Object accent, Object greeting, Object icons, Object effect) {
+    static SeasonalLook build(String event, Object accent, Object greeting, Object icons, Object effect, Object snow,
+                              Object snowFlakes, Object snowPiles) {
         SeasonalLook d = defaults(event);
         if (d == NONE) return NONE;
         int kind = d.accentKind, colour = d.accent;
@@ -117,7 +134,11 @@ final class SeasonalLook {
                 default: break;
             }
         }
-        return new SeasonalLook(event, kind, colour, d.onWarm, d.onCool, text, ic, ef);
+        boolean sn = snow instanceof Boolean ? (Boolean) snow : d.snow;
+        int flakes = snowFlakes instanceof Integer && (Integer) snowFlakes >= 0 && (Integer) snowFlakes <= MAX_FLAKES
+                ? (Integer) snowFlakes : d.snowFlakes;
+        boolean piles = snowPiles instanceof Boolean ? (Boolean) snowPiles : d.snowPiles;
+        return new SeasonalLook(event, kind, colour, d.onWarm, d.onCool, text, ic, ef, sn, flakes, piles);
     }
 
     /** The look for {@code event} from config.json's {@code "seasonal"} block; {@link #NONE} when there is no event. */
@@ -126,7 +147,8 @@ final class SeasonalLook {
         JSONObject looks = block == null ? null : block.optJSONObject("looks");
         JSONObject o = looks == null ? null : looks.optJSONObject(event);
         if (o == null) return defaults(event);
-        return build(event, o.opt("accent"), o.opt("greeting"), o.opt("icons"), o.opt("effect"));
+        return build(event, o.opt("accent"), o.opt("greeting"), o.opt("icons"), o.opt("effect"), o.opt("snow"),
+                o.opt("snow_flakes"), o.opt("snow_piles"));
     }
 
     boolean isNone() {

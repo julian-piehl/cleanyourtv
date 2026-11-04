@@ -269,7 +269,7 @@ a general picture, the reserve for days without pictures of their own.
 | `hemisphere` | `north` (default) or `south`, which moves the seasons by half a year |
 | `seasons` | Meteorological seasons, whole months: `spring` March to May, `summer` June to August, `autumn` September to November, `winter` December to February (in the north). On by default; `false` switches them off |
 | `events` | Built-in events to switch on by name: `halloween`, 24 October to 1 November, and `christmas`, from the Monday after Totensonntag (the fifth Sunday before Christmas Day, when the Christmas markets open in Germany) to 26 December |
-| `looks` | How Home looks during each event, by event id: `accent` (`auto`, `#RRGGBB` or `off`), `greeting` (text, or `false` for the time-of-day greeting), `icons` (`true` or `false`) and `effect` (`off`, `daily`, `after_break` or `always`). See below |
+| `looks` | How Home looks during each event, by event id: `accent` (`auto`, `#RRGGBB` or `off`), `greeting` (text, or `false` for the time-of-day greeting), `icons` (`true` or `false`), `effect` (`off`, `daily`, `after_break` or `always`), `snow`, `snow_flakes` (0 to 300) and `snow_piles`. See below |
 | `custom_events` | The theme's own events, on by being defined. Each has an `id` (lower-case letters, digits and `_`, used as the filename prefix) and one rule: `from`/`to` every year, also over New Year, each as `MM-DD` or as a weekday counted back from a day, `{"before": "12-25", "weekday": "sun", "n": 4, "days": 0}` (the `n`-th `weekday` before `before`, moved by `days`; `n` 1 to 5, `days` up to 31 either way); `easter` as days before and after Western Easter Sunday; `nth_weekday` with `month`, `weekday` (`mon` to `sun`) and `n` (1 to 5, or -1 for the last); or `dates` as a list of `YYYY-MM-DD` days. An `id` of a built-in event replaces its dates |
 
 A day shows its event's pictures if it has any, otherwise its season's, otherwise the general pictures, and if
@@ -299,6 +299,17 @@ During an event, Home can take on its look. Halloween and Christmas have one by 
 - `effect`: the event's effect when Home opens. Halloween's bats burst up from below the dock and fly past the
   viewer; Christmas has none yet. `always` (Halloween's default) plays every time, `daily` on the first Home of the
   day, `after_break` when Home was away for an hour or more, `off` never. Coming out of standby it waits until the screen shows a picture. `reduced_motion` turns it off.
+
+- `snow`: quiet snow falls behind the tiles, with a few large, faint flakes in front of them for depth; `snow_flakes`
+  sets how many fall behind (90 by default; one in eighteen of that falls in front). On by default for Christmas. It
+  runs only while Home is on screen. The launcher watches the first seconds of it: on a TV that cannot keep up it
+  halves the flakes, and if that still stutters it lets none fall. A TV short of memory starts at half. What it found
+  is kept until the next theme push.
+- `snow_piles`: snow that falls onto the top-bar buttons, the dock band and the tiles stays there, so a thin, uneven
+  layer builds up on their top edges over about ten minutes, following their rounded corners and growing with a tile
+  when it zooms. Each time the TV is switched on the edges start bare again; when the event ends while Home is open,
+  the snow melts away first. On by default for Christmas, and it grows also where no flakes are drawn.
+  `reduced_motion` turns off the snow and the piles.
 
 Events other than Halloween and Christmas have none of this unless their look sets it. A festival (`festival`) takes precedence
 over a seasonal look.
