@@ -1,73 +1,40 @@
 package com.gathin.tvhome;
 
-import android.content.res.ColorStateList;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.ColorFilter;
-import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.PixelFormat;
-import android.graphics.Rect;
 import android.graphics.RectF;
-import android.graphics.drawable.Drawable;
-import android.os.SystemClock;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 /**
  * The Halloween icons for the top bar: a cauldron for Inputs, a bat under Wi-Fi arcs, a jack-o'-lantern for Settings.
- * They are flat, one colour like the launcher's own icons, and take the pill's tint (white, dark when focused). The
- * carved face and the brew line are cut out of the shape; while the pill is focused they light in the accent colour.
- * At rest nothing moves. When the pill gets focus each plays one short animation: the bubbles rise and pop, the bat
- * beats its wings twice, the face flickers alight like a candle. Drawn in a 24 x 24 box scaled into the bounds;
- * shapes are built once, and only the bat's path is rebuilt (into the same Path) while it flaps.
+ * The carved face and the brew line are cut out of the shape and light in the accent while the pill is focused. On
+ * focus the bubbles rise and pop, the bat beats its wings twice, the face flickers alight like a candle. Only the
+ * bat's path is rebuilt (into the same Path) while it flaps. See SeasonalIconDrawable for what all the icons share.
  */
-public final class HalloweenIconDrawable extends Drawable {
+public final class HalloweenIconDrawable extends SeasonalIconDrawable {
 
     static final int CAULDRON = 0, BAT = 1, PUMPKIN = 2;
 
-    private static final float BOX = 24f;
-    private static final float SIZE_DP = 22f;
-    private static final long FRAME_MS = 16;
     private static final long[] ANIM_MS = {900, 650, 1100};
-    private static final int REST_COLOR = 0xFFFFFFFF;
 
-    private final int kind;
-    private final float density;
-    private final Paint ink = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint lit = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint arc = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Path shape = new Path(), detail = new Path(), bat = new Path();
     private final RectF oval = new RectF();
 
-    private ColorStateList tint;
-    private int color = REST_COLOR;
-    private int accent = SeasonalLook.PUMPKIN_ORANGE;
-    private int alpha = 255;
-    private boolean focused, reduced;
-    private long animStart = -1;
-    /** Wi-Fi level for the bat: 0 offline, 1 to 4 lights 0 to 3 arcs. */
-    private int level = 4;
-
-    private final Runnable tick = new Runnable() {
-        @Override
-        public void run() {
-            invalidateSelf();
-            if (animating(SystemClock.uptimeMillis())) scheduleSelf(this, SystemClock.uptimeMillis() + FRAME_MS);
-        }
-    };
-
     HalloweenIconDrawable(int kind, float density) {
-        this.kind = kind;
-        this.density = density;
-        ink.setStyle(Paint.Style.FILL);
-        lit.setStyle(Paint.Style.FILL);
-        arc.setStyle(Paint.Style.STROKE);
-        arc.setStrokeWidth(1.9f);
-        arc.setStrokeCap(Paint.Cap.ROUND);
+        super(kind, density, SeasonalLook.PUMPKIN_ORANGE);
         if (kind == CAULDRON) buildCauldron();
         if (kind == PUMPKIN) buildPumpkin();
+    }
+
+    @Override
+    long animMs() {
+        return ANIM_MS[kind];
+    }
+
+    @Override
+    void drawIcon(Canvas c, float p) {
+        if (kind == CAULDRON) drawCauldron(c, p);
+        else if (kind == BAT) drawBat(c, p);
+        else drawPumpkin(c, p);
     }
 
     // ---- shapes, in box units ----------------------------------------------------------------------
@@ -148,88 +115,6 @@ public final class HalloweenIconDrawable extends Drawable {
         bat.lineTo(0f, 0.4f);
     }
 
-    // ---- state -------------------------------------------------------------------------------------
-
-    /** The accent the lit details take while focused. */
-    void setAccent(int argb) {
-        if (accent == argb) return;
-        accent = argb;
-        if (focused) invalidateSelf();
-    }
-
-    /** reduced_motion: no focus animations, the details just light. */
-    void setReducedMotion(boolean reduced) {
-        this.reduced = reduced;
-    }
-
-    /** The Wi-Fi level the bat shows: 0 offline, 1 to 4. Only the bat icon uses it. */
-    void setSignal(int level) {
-        int l = Math.max(0, Math.min(4, level));
-        if (this.level == l) return;
-        this.level = l;
-        invalidateSelf();
-    }
-
-    @Override
-    public boolean isStateful() {
-        return true;
-    }
-
-    @Override
-    protected boolean onStateChange(int[] state) {
-        boolean f = false;
-        for (int s : state) if (s == android.R.attr.state_focused) f = true;
-        int c = tint != null ? tint.getColorForState(state, REST_COLOR) : REST_COLOR;
-        boolean changed = f != focused || c != color;
-        color = c;
-        if (f && !focused && !reduced) {
-            animStart = SystemClock.uptimeMillis();
-            unscheduleSelf(tick);
-            scheduleSelf(tick, animStart + FRAME_MS);
-        }
-        if (!f) animStart = -1;
-        focused = f;
-        return changed;
-    }
-
-    @Override
-    public void setTintList(@Nullable ColorStateList tint) {
-        this.tint = tint;
-        onStateChange(getState());
-        invalidateSelf();
-    }
-
-    private boolean animating(long now) {
-        return animStart >= 0 && now - animStart <= ANIM_MS[kind];
-    }
-
-    /** Progress 0..1 of the focus animation, or -1 when none is playing. */
-    private float progress(long now) {
-        return animating(now) ? (now - animStart) / (float) ANIM_MS[kind] : -1f;
-    }
-
-    private static float ease(float p) {
-        float q = 1 - p;
-        return 1 - q * q * q;
-    }
-
-    // ---- drawing -----------------------------------------------------------------------------------
-
-    @Override
-    public void draw(@NonNull Canvas c) {
-        Rect b = getBounds();
-        int save = c.save();
-        c.translate(b.left, b.top);
-        c.scale(b.width() / BOX, b.height() / BOX);
-        ink.setColor(color);
-        ink.setAlpha(Color.alpha(color) * alpha / 255);
-        float p = progress(SystemClock.uptimeMillis());
-        if (kind == CAULDRON) drawCauldron(c, p);
-        else if (kind == BAT) drawBat(c, p);
-        else drawPumpkin(c, p);
-        c.restoreToCount(save);
-    }
-
     private void drawCauldron(Canvas c, float p) {
         // Three bubbles over the rim; on focus they rise and pop one after another.
         for (float[] bb : BUBBLES) {
@@ -260,19 +145,18 @@ public final class HalloweenIconDrawable extends Drawable {
 
     private void drawBat(Canvas c, float p) {
         // Arcs over the bat: level 4 lights all three, level 1 none.
-        arc.setColor(color);
         for (int i = 0; i < ARC_RADII.length; i++) {
-            arc.setAlpha(Math.round(Color.alpha(color) * alpha / 255f * (level > i + 1 ? 1f : 0.28f)));
+            line.setAlpha(inkAlpha(level > i + 1 ? 1f : 0.28f));
             float r = ARC_RADII[i];
             oval.set(12 - r, 11 - r, 12 + r, 11 + r);
-            c.drawArc(oval, 220f, 100f, false, arc);
+            c.drawArc(oval, 220f, 100f, false, line);
         }
         if (level == 0) {
             // Offline: hanging asleep from a twig, wings wrapped round.
-            arc.setAlpha(Math.round(Color.alpha(color) * alpha / 255f * 0.6f));
-            arc.setStrokeWidth(1.2f);
-            c.drawLine(7.5f, 13.4f, 16.5f, 13.4f, arc);
-            arc.setStrokeWidth(1.9f);
+            line.setAlpha(inkAlpha(0.6f));
+            line.setStrokeWidth(1.2f);
+            c.drawLine(7.5f, 13.4f, 16.5f, 13.4f, line);
+            line.setStrokeWidth(1.9f);
             bat.rewind();
             bat.moveTo(11f, 13.6f);
             bat.lineTo(13f, 13.6f);
@@ -329,42 +213,5 @@ public final class HalloweenIconDrawable extends Drawable {
         lit.setColor(accent);
         lit.setAlpha(Math.round(alpha * on));
         c.drawPath(detail, lit);
-    }
-
-    // ---- Drawable plumbing ---------------------------------------------------------------------------
-
-    @Override
-    public int getIntrinsicWidth() {
-        return Math.round(SIZE_DP * density);
-    }
-
-    @Override
-    public int getIntrinsicHeight() {
-        return Math.round(SIZE_DP * density);
-    }
-
-    @Override
-    public void setAlpha(int alpha) {
-        if (this.alpha == alpha) return;
-        this.alpha = alpha;
-        invalidateSelf();
-    }
-
-    @Override
-    public int getAlpha() {
-        return alpha;
-    }
-
-    @Override
-    public void setColorFilter(@Nullable ColorFilter filter) {
-        ink.setColorFilter(filter);
-        arc.setColorFilter(filter);
-        invalidateSelf();
-    }
-
-    @Override
-    @SuppressWarnings("deprecation")
-    public int getOpacity() {
-        return PixelFormat.TRANSLUCENT;
     }
 }

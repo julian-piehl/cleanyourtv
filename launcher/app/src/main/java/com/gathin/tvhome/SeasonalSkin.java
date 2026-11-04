@@ -40,7 +40,7 @@ final class SeasonalSkin {
     private final boolean reducedMotion;
     private final ArgbEvaluator argb = new ArgbEvaluator();
 
-    private HalloweenIconDrawable inputsIcon, wifiIcon, settingsIcon;
+    private SeasonalIconDrawable inputsIcon, wifiIcon, settingsIcon;
     private TextView greeting;
     private IntConsumer accentSink;
     private int accent, greetingColour;
@@ -79,16 +79,21 @@ final class SeasonalSkin {
 
     /** Puts the event's icons on the three pills, if the look wants them and the event has a set. */
     void applyIcons(TextView inputs, TextView wifi, TextView settings) {
-        if (!active() || !look.icons || !SeasonalLook.HALLOWEEN.equals(look.event)) return;
+        if (!active() || !look.icons) return;
         float density = context.getResources().getDisplayMetrics().density;
-        inputsIcon = icon(inputs, HalloweenIconDrawable.CAULDRON, density);
-        wifiIcon = icon(wifi, HalloweenIconDrawable.BAT, density);
-        settingsIcon = icon(settings, HalloweenIconDrawable.PUMPKIN, density);
+        if (SeasonalLook.HALLOWEEN.equals(look.event)) {
+            inputsIcon = icon(inputs, new HalloweenIconDrawable(HalloweenIconDrawable.CAULDRON, density));
+            wifiIcon = icon(wifi, new HalloweenIconDrawable(HalloweenIconDrawable.BAT, density));
+            settingsIcon = icon(settings, new HalloweenIconDrawable(HalloweenIconDrawable.PUMPKIN, density));
+        } else if (SeasonalLook.CHRISTMAS.equals(look.event)) {
+            inputsIcon = icon(inputs, new ChristmasIconDrawable(ChristmasIconDrawable.GIFT, density));
+            wifiIcon = icon(wifi, new ChristmasIconDrawable(ChristmasIconDrawable.TREE, density));
+            settingsIcon = icon(settings, new ChristmasIconDrawable(ChristmasIconDrawable.FLAKE, density));
+        }
     }
 
-    private HalloweenIconDrawable icon(TextView pill, int kind, float density) {
+    private SeasonalIconDrawable icon(TextView pill, SeasonalIconDrawable d) {
         if (pill == null) return null;
-        HalloweenIconDrawable d = new HalloweenIconDrawable(kind, density);
         d.setReducedMotion(reducedMotion);
         d.setAccent(accent != 0 ? accent : look.onCool);
         // The pill's tint (white, dark when focused) still applies: these icons are one colour like the stock ones.
@@ -96,7 +101,7 @@ final class SeasonalSkin {
         return d;
     }
 
-    /** Whether the Wi-Fi pill shows the bat, which needs the signal level instead of the stock icons. */
+    /** Whether the Wi-Fi pill shows the event's icon, which needs the signal level instead of the stock icons. */
     boolean ownsWifiIcon() {
         return wifiIcon != null;
     }

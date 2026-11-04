@@ -292,8 +292,10 @@ During an event, Home can take on its look. Halloween and Christmas have one by 
 - `greeting`: replaces the time-of-day greeting. Halloween's is "Happy Halloween". Christmas's follows the date:
   "Season's Greetings" in Advent ("Schöne Adventszeit", and "Schönen 1. Advent" to "4. Advent" on its Sundays, on a
   German TV), "Merry Christmas" from 24 to 26 December.
-- `icons`: Halloween's icons for Inputs (a cauldron), Wi-Fi (a bat under the arcs, hanging asleep when offline) and
-  Settings (a jack-o'-lantern). They are one colour like the stock icons and move once, briefly, when focused.
+- `icons`: the event's icons for Inputs, Wi-Fi and Settings. Halloween: a cauldron, a bat under the arcs (hanging
+  asleep when offline) and a jack-o'-lantern. Christmas: a gift whose lid hops, a fir tree whose rows of lights show
+  the signal (the star on top while online), and a snowflake that turns. They are one colour like the stock icons
+  and move once, briefly, when focused.
 - `effect`: the event's effect when Home opens. Halloween's bats burst up from below the dock and fly past the
   viewer; Christmas has none yet. `always` (Halloween's default) plays every time, `daily` on the first Home of the
   day, `after_break` when Home was away for an hour or more, `off` never. `reduced_motion` turns it off.
