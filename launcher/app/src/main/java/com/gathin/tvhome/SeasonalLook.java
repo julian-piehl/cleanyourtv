@@ -9,7 +9,7 @@ import java.util.Locale;
  * How Home looks during one seasonal event, from the theme's {@code "seasonal" → "looks" → "<event id>"} object:
  * <pre>
  * "looks": {
- *   "halloween": { "accent": "auto", "greeting": "Happy Halloween", "icons": true, "swarm": "daily" }
+ *   "halloween": { "accent": "auto", "greeting": "Happy Halloween", "icons": true, "swarm": "always" }
  * }
  * </pre>
  * <ul>
@@ -20,7 +20,7 @@ import java.util.Locale;
  *   <li>{@code swarm}: how often bats fly out when Home opens: {@code "off"}, {@code "daily"} (the first Home of
  *       the day), {@code "after_break"} (Home was away for an hour or more) or {@code "always"}.</li>
  * </ul>
- * Built-in events have their own defaults (Halloween: all on, the swarm daily); a theme changes single keys and the
+ * Built-in events have their own defaults (Halloween: all on, the swarm on every Home); a theme changes single keys and the
  * rest keep them. Events without built-in defaults start with everything off. A key of the wrong type or with an
  * unknown value keeps its default.
  */
@@ -59,7 +59,7 @@ final class SeasonalLook {
     /** The look an event has without any theme settings. */
     static SeasonalLook defaults(String event) {
         if (event == null) return NONE;
-        if ("halloween".equals(event)) return new SeasonalLook(event, ACCENT_AUTO, 0, "", true, Swarm.DAILY);
+        if ("halloween".equals(event)) return new SeasonalLook(event, ACCENT_AUTO, 0, "", true, Swarm.ALWAYS);
         return new SeasonalLook(event, ACCENT_OFF, 0, null, false, Swarm.OFF);
     }
 

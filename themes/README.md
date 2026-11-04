@@ -281,7 +281,7 @@ never while it is on screen. A picture chosen in Launcher settings still wins ov
 During an event, Home can take on its look. Halloween has all of it by default; a theme changes single keys:
 
 ```json
-"looks": { "halloween": { "accent": "auto", "greeting": "Happy Halloween", "icons": true, "swarm": "daily" } }
+"looks": { "halloween": { "accent": "auto", "greeting": "Happy Halloween", "icons": true, "swarm": "always" } }
 ```
 
 - `accent`: the focus glow and the icons' lit details. `auto` picks, for each wallpaper, whichever of pumpkin orange
@@ -290,8 +290,9 @@ During an event, Home can take on its look. Halloween has all of it by default; 
 - `greeting`: replaces the time-of-day greeting. Halloween's is "Happy Halloween".
 - `icons`: Halloween's icons for Inputs (a cauldron), Wi-Fi (a bat under the arcs, hanging asleep when offline) and
   Settings (a jack-o'-lantern). They are one colour like the stock icons and move once, briefly, when focused.
-- `swarm`: bats burst up from below the dock and fly past the viewer when Home opens. `daily` plays on the first
-  Home of the day, `after_break` when Home was away for an hour or more, `always` every time, `off` never.
+- `swarm`: bats burst up from below the dock and fly past the viewer when Home opens. `always` (Halloween's
+  default) plays every time, `daily` on the first Home of the day, `after_break` when Home was away for an hour or
+  more, `off` never.
   `reduced_motion` turns it off.
 
 Events other than Halloween have none of this unless their look sets it. A festival (`festival`) takes precedence

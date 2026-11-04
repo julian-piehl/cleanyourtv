@@ -20,7 +20,7 @@ public class SeasonalLookTest {
         assertEquals(SeasonalLook.ACCENT_AUTO, l.accentKind);
         assertEquals("", l.greeting);             // the built-in "Happy Halloween"
         assertTrue(l.icons);
-        assertEquals(SeasonalLook.Swarm.DAILY, l.swarm);
+        assertEquals(SeasonalLook.Swarm.ALWAYS, l.swarm);
     }
 
     @Test
@@ -55,7 +55,7 @@ public class SeasonalLookTest {
         assertEquals(SeasonalLook.ACCENT_AUTO, l.accentKind);
         assertEquals("", l.greeting);
         assertTrue(l.icons);
-        assertEquals(SeasonalLook.Swarm.DAILY, l.swarm);
+        assertEquals(SeasonalLook.Swarm.ALWAYS, l.swarm);
         SeasonalLook m = SeasonalLook.build("halloween", null, null, null, null);
         assertEquals(SeasonalLook.ACCENT_AUTO, m.accentKind);
     }
