@@ -363,6 +363,7 @@ public final class HalloweenIconDrawable extends Drawable {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public int getOpacity() {
         return PixelFormat.TRANSLUCENT;
     }

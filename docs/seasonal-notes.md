@@ -18,6 +18,9 @@ Working notes for the `seasonal` branch. Remove this file before opening a pull 
 - **Translations**: the Halloween greeting is English only for now (`values/strings_seasonal.xml`), also on German
   TVs by choice. Other languages later.
 - **Festivals**: Dussehra and Diwali still use their own festive skin; migrate them to seasonal events and looks later.
+- **APK size**: after the upstream merge of 4 Nov the release APK is 586.5 KB, over CI's 576 KB limit (upstream
+  alone had about 4 KB left). Before a PR: slim the code (one particle view for bats and snow), ask the maintainer
+  about the limit, or move the effects into an add-on.
 - **Build-up towards the day** and **day/night variants** for events: not now, maybe later.
 - **Wallpaper generators** (`halloween_wallpapers.py`, `render_wallpapers.py`) are not in the repo yet; adding them
   to `tools/` needs rows in the README's tools table.
