@@ -4,6 +4,6 @@
   "wallpaper_captions": true,
   "dock_opacity": 50,
   "seasonal": {
-    "events": ["halloween"]
+    "events": ["halloween", "christmas"]
   }
 }

@@ -149,6 +149,42 @@ public class SeasonalCalendarTest {
     }
 
     @Test
+    public void weekdayAnchorsCountBackFromTheDay() {
+        SeasonalRule.Anchor advent = SeasonalRule.Anchor.weekdayBefore("12-25", "sun", 4, 0);
+        assertEquals(d("2026-11-29"), advent.on(2026));
+        assertEquals(d("2022-11-27"), advent.on(2022));   // Christmas Day on a Sunday does not count
+        assertEquals(d("2027-11-28"), advent.on(2027));
+        assertEquals(d("2026-11-23"), SeasonalRule.Anchor.weekdayBefore("12-25", "sun", 5, 1).on(2026));
+        assertNull(SeasonalRule.Anchor.weekdayBefore("12-25", "sun", 0, 0));
+        assertNull(SeasonalRule.Anchor.weekdayBefore("12-25", "sun", 6, 0));
+        assertNull(SeasonalRule.Anchor.weekdayBefore("12-25", "sunday", 1, 0));
+        assertNull(SeasonalRule.Anchor.weekdayBefore("12-25", "sun", 1, 40));
+        assertNull(SeasonalRule.Anchor.day("12-32"));
+    }
+
+    @Test
+    public void builtInChristmasRunsFromTheMondayAfterTotensonntagToBoxingDay() {
+        SeasonalRule christmas = SeasonalCalendar.BUILT_IN.get(SeasonalLook.CHRISTMAS);
+        assertNull(christmas.occurrenceOn(d("2026-11-22")));
+        assertNotNull(christmas.occurrenceOn(d("2026-11-23")));
+        assertNotNull(christmas.occurrenceOn(d("2026-12-26")));
+        assertNull(christmas.occurrenceOn(d("2026-12-27")));
+        assertNotNull(christmas.occurrenceOn(d("2027-11-22")));   // 2027: Totensonntag is 21 Nov
+        assertNull(christmas.occurrenceOn(d("2027-11-21")));
+        assertEquals(34, christmas.occurrenceOn(d("2026-12-01")).days());
+    }
+
+    @Test
+    public void anAnchoredRangeMayRunOverNewYear() {
+        SeasonalRule r = SeasonalRule.range(SeasonalRule.Anchor.weekdayBefore("12-25", "sun", 1, 0),
+                SeasonalRule.Anchor.day("01-06"));
+        assertNotNull(r.occurrenceOn(d("2026-12-20")));
+        assertNotNull(r.occurrenceOn(d("2027-01-06")));
+        assertNull(r.occurrenceOn(d("2027-01-07")));
+        assertNull(r.occurrenceOn(d("2026-12-19")));
+    }
+
+    @Test
     public void offShowsNothing() {
         SeasonalCalendar.Day day = SeasonalCalendar.OFF.on(d("2026-10-31"));
         assertNull(day.season);

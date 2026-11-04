@@ -14,7 +14,9 @@ import java.util.Locale;
 /**
  * When a seasonal event takes place, as one of four kinds of rule:
  * <ul>
- *   <li>a fixed range of days every year, {@code "from": "10-24", "to": "11-01"}, which may run over New Year;</li>
+ *   <li>a range of days every year, {@code "from": "10-24", "to": "11-01"}, which may run over New Year; either end
+ *       may instead be a weekday counted back from a day, {@code {"before": "12-25", "weekday": "sun", "n": 5,
+ *       "days": 1}}, the Monday after the fifth Sunday before Christmas (see {@link Anchor});</li>
  *   <li>a range around Western (Gregorian) Easter Sunday, {@code "easter": [-2, 1]} for Good Friday to Easter
  *       Monday;</li>
  *   <li>the n-th weekday of a month, {@code "nth_weekday": {"month": 5, "weekday": "sun", "n": 2}}, with
@@ -35,7 +37,7 @@ final class SeasonalRule {
 
     private final Kind kind;
     // FIXED
-    private final MonthDay from, to;
+    private final Anchor from, to;
     // EASTER
     private final int startOffset, endOffset;
     // NTH_WEEKDAY
@@ -44,7 +46,7 @@ final class SeasonalRule {
     // DATES
     private final List<LocalDate> dates;
 
-    private SeasonalRule(Kind kind, MonthDay from, MonthDay to, int startOffset, int endOffset, int month, int n,
+    private SeasonalRule(Kind kind, Anchor from, Anchor to, int startOffset, int endOffset, int month, int n,
                          DayOfWeek weekday, List<LocalDate> dates) {
         this.kind = kind;
         this.from = from;
@@ -61,9 +63,13 @@ final class SeasonalRule {
 
     /** Every year from {@code from} to {@code to} inclusive, both as {@code MM-DD}; null if either is malformed. */
     static SeasonalRule fixed(String from, String to) {
-        MonthDay f = monthDay(from), t = monthDay(to);
-        if (f == null || t == null) return null;
-        return new SeasonalRule(Kind.FIXED, f, t, 0, 0, 0, 0, null, null);
+        return range(Anchor.day(from), Anchor.day(to));
+    }
+
+    /** Every year from {@code from} to {@code to} inclusive; null if either end is null (malformed). */
+    static SeasonalRule range(Anchor from, Anchor to) {
+        if (from == null || to == null) return null;
+        return new SeasonalRule(Kind.FIXED, from, to, 0, 0, 0, 0, null, null);
     }
 
     /** From {@code start} to {@code end} days after Easter Sunday (negative is before); null if out of range. */
@@ -127,16 +133,14 @@ final class SeasonalRule {
     }
 
     private Occurrence fixedOn(LocalDate day) {
-        int y = day.getYear();
-        if (!from.isAfter(to)) {
-            Occurrence o = new Occurrence(from.atYear(y), to.atYear(y));
-            return o.contains(day) ? o : null;
+        // The occurrence that started last year (one that runs over New Year, e.g. 12-31 to 01-01) or this year.
+        for (int y = day.getYear() - 1; y <= day.getYear(); y++) {
+            LocalDate start = from.on(y), end = to.on(y);
+            if (end.isBefore(start)) end = to.on(y + 1);
+            Occurrence o = new Occurrence(start, end);
+            if (o.contains(day)) return o;
         }
-        // Runs over New Year, e.g. 12-31 to 01-01: either the one that started this year or the one from last year.
-        Occurrence thisYear = new Occurrence(from.atYear(y), to.atYear(y + 1));
-        if (thisYear.contains(day)) return thisYear;
-        Occurrence lastYear = new Occurrence(from.atYear(y - 1), to.atYear(y));
-        return lastYear.contains(day) ? lastYear : null;
+        return null;
     }
 
     /** Western Easter Sunday of {@code year}: the anonymous Gregorian algorithm (Meeus/Jones/Butcher). */
@@ -169,6 +173,49 @@ final class SeasonalRule {
             case "sat": return DayOfWeek.SATURDAY;
             case "sun": return DayOfWeek.SUNDAY;
             default: return null;
+        }
+    }
+
+    /**
+     * One end of a yearly range: a day of the year ({@code "12-26"}), or a weekday counted back from a day, the
+     * {@code n}-th {@code weekday} strictly before {@code before}, moved by {@code days}. The first Sunday of Advent is
+     * the 4th Sunday before 12-25; the Monday after Totensonntag, when Christmas markets open in Germany, is the 5th
+     * Sunday before 12-25 plus 1 day.
+     */
+    static final class Anchor {
+        /** How far a weekday anchor may count back and move: five weeks, a month either way. */
+        static final int MAX_N = 5, MAX_DAYS = 31;
+
+        private final MonthDay day;
+        private final DayOfWeek weekday;
+        private final int n, days;
+
+        private Anchor(MonthDay day, DayOfWeek weekday, int n, int days) {
+            this.day = day;
+            this.weekday = weekday;
+            this.n = n;
+            this.days = days;
+        }
+
+        /** {@code MM-DD}; null if malformed. */
+        static Anchor day(String monthDay) {
+            MonthDay d = monthDay(monthDay);
+            return d == null ? null : new Anchor(d, null, 0, 0);
+        }
+
+        /** The {@code n}-th {@code weekday} ("mon" to "sun") before {@code before}, plus {@code days}; null if malformed. */
+        static Anchor weekdayBefore(String before, String weekday, int n, int days) {
+            MonthDay d = monthDay(before);
+            DayOfWeek w = dayOfWeek(weekday);
+            if (d == null || w == null || n < 1 || n > MAX_N || Math.abs(days) > MAX_DAYS) return null;
+            return new Anchor(d, w, n, days);
+        }
+
+        /** The day this end falls on in {@code year}. */
+        LocalDate on(int year) {
+            LocalDate ref = day.atYear(year);
+            if (weekday == null) return ref;
+            return ref.minusDays(1).with(TemporalAdjusters.previousOrSame(weekday)).minusWeeks(n - 1).plusDays(days);
         }
     }
 

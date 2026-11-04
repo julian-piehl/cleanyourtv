@@ -16,10 +16,10 @@ import java.util.function.IntConsumer;
 
 /**
  * Applies a {@link SeasonalLook} to Home: the event's icons in the top bar, the accent on the focus glow and on the
- * icons' lit details, the greeting in a colour taken from the wallpaper, and the bat swarm when Home opens.
+ * icons' lit details, the greeting in a colour taken from the wallpaper, and the event's effect when Home opens.
  * <p>
  * Colours follow the wallpaper. Each time a picture is shown, a small sample of it decides two colours: the accent,
- * which has to make the focus easy to find, contrasts with the picture (purple on a warm one, orange on a cool one);
+ * which has to make the focus easy to find, contrasts with the picture (one of the event's two colours);
  * the greeting, which only has to sit well, takes the picture's own strongest colour. Both blend over to the new
  * values. MainActivity keeps the wiring: it hands the skin its views and calls it at the few moments that matter.
  */
@@ -31,7 +31,7 @@ final class SeasonalSkin {
     private static final long BLEND_MS = 700;
     private static final int SWARM_BATS = 22;
     private static final long SWARM_MS = 2600;
-    private static final String PREFS = "seasonal", SWARM_DAY = "swarm_day";
+    private static final String PREFS = "seasonal", EFFECT_DAY = "effect_day";
     /** When Home last went to the background; 0 since the process started, which counts as a break. */
     private static long hiddenAt;
 
@@ -53,7 +53,7 @@ final class SeasonalSkin {
         this.look = look;
         this.reducedMotion = reducedMotion;
         accent = look.accentKind == SeasonalLook.ACCENT_FIXED ? look.accent
-                : look.accentKind == SeasonalLook.ACCENT_AUTO ? SeasonalLook.PUMPKIN_ORANGE : 0;
+                : look.accentKind == SeasonalLook.ACCENT_AUTO ? look.onCool : 0;
         greetingColour = accent != 0 ? lift(accent) : 0xFFFFFFFF;
     }
 
@@ -79,7 +79,7 @@ final class SeasonalSkin {
 
     /** Puts the event's icons on the three pills, if the look wants them and the event has a set. */
     void applyIcons(TextView inputs, TextView wifi, TextView settings) {
-        if (!active() || !look.icons || !"halloween".equals(look.event)) return;
+        if (!active() || !look.icons || !SeasonalLook.HALLOWEEN.equals(look.event)) return;
         float density = context.getResources().getDisplayMetrics().density;
         inputsIcon = icon(inputs, HalloweenIconDrawable.CAULDRON, density);
         wifiIcon = icon(wifi, HalloweenIconDrawable.BAT, density);
@@ -90,7 +90,7 @@ final class SeasonalSkin {
         if (pill == null) return null;
         HalloweenIconDrawable d = new HalloweenIconDrawable(kind, density);
         d.setReducedMotion(reducedMotion);
-        d.setAccent(accent != 0 ? accent : SeasonalLook.PUMPKIN_ORANGE);
+        d.setAccent(accent != 0 ? accent : look.onCool);
         // The pill's tint (white, dark when focused) still applies: these icons are one colour like the stock ones.
         pill.setCompoundDrawablesRelativeWithIntrinsicBounds(d, null, null, null);
         return d;
@@ -112,7 +112,14 @@ final class SeasonalSkin {
     String greetingText(Resources res) {
         if (!active() || look.greeting == null) return null;
         if (!look.greeting.isEmpty()) return look.greeting;
-        return "halloween".equals(look.event) ? res.getString(R.string.seasonal_halloween_greeting) : null;
+        if (SeasonalLook.HALLOWEEN.equals(look.event)) return res.getString(R.string.seasonal_halloween_greeting);
+        if (SeasonalLook.CHRISTMAS.equals(look.event)) {
+            int g = SeasonalLook.christmasGreeting(LocalDate.now());
+            if (g == SeasonalLook.GREET_CHRISTMAS) return res.getString(R.string.seasonal_christmas_greeting);
+            if (g == SeasonalLook.GREET_SEASON) return res.getString(R.string.seasonal_advent_greeting);
+            return res.getString(R.string.seasonal_advent_sunday_greeting, g);
+        }
+        return null;
     }
 
     /** The view the greeting is in; the skin keeps its colour in step with the wallpaper. */
@@ -154,7 +161,8 @@ final class SeasonalSkin {
     void onPicture(int[] sample) {
         if (!active() || sample == null) return;
         int n = sample.length;
-        int toAccent = look.accentKind == SeasonalLook.ACCENT_AUTO ? SeasonalLook.contrastAccent(sample, n) : accent;
+        int toAccent = look.accentKind == SeasonalLook.ACCENT_AUTO
+                ? SeasonalLook.contrastAccent(sample, n, look.onWarm, look.onCool) : accent;
         int toGreeting = SeasonalLook.matchingColour(sample, n);
         blendTo(toAccent, toGreeting);
     }
@@ -196,16 +204,17 @@ final class SeasonalSkin {
         return 0xFF000000 | (r << 16) | (g << 8) | b;
     }
 
-    // ---- the swarm -----------------------------------------------------------------------------------
+    // ---- the effect when Home opens -----------------------------------------------------------------
 
-    /** Home came to the front: plays the swarm over {@code root} if the look's schedule says it is due. */
+    /** Home came to the front: plays the event's effect over {@code root} if the look's schedule says it is due. */
     void onHomeShown(FrameLayout root) {
-        if (!active() || reducedMotion || root == null) return;
+        // Halloween's bats are the only effect so far.
+        if (!active() || reducedMotion || root == null || !SeasonalLook.HALLOWEEN.equals(look.event)) return;
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         LocalDate today = LocalDate.now();
-        String last = prefs.getString(SWARM_DAY, "");
-        if (!SeasonalLook.swarmDue(look.swarm, today, last, SystemClock.elapsedRealtime(), hiddenAt)) return;
-        prefs.edit().putString(SWARM_DAY, today.toString()).apply();
+        String last = prefs.getString(EFFECT_DAY, "");
+        if (!SeasonalLook.effectDue(look.effect, today, last, SystemClock.elapsedRealtime(), hiddenAt)) return;
+        prefs.edit().putString(EFFECT_DAY, today.toString()).apply();
         root.postDelayed(() -> {
             if (!root.isAttachedToWindow()) return;
             BatSwarmView swarm = new BatSwarmView(context);

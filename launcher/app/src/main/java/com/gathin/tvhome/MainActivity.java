@@ -267,7 +267,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private Festival festival = Festival.NONE;
     /** Seasons and events from the theme, and the day Home was built for (see SeasonalCalendar). */
     private SeasonalCalendar.Snapshot seasonal = SeasonalCalendar.Snapshot.OFF;
-    /** Today's seasonal look on Home: icons, accent, greeting, swarm (see SeasonalSkin); a festival takes precedence. */
+    /** Today's seasonal look on Home: icons, accent, greeting, effect (see SeasonalSkin); a festival takes precedence. */
     private SeasonalSkin skin = SeasonalSkin.NONE;
     private boolean festive;
     /** The network pill's festive light: the diya, or the jack-o'-lantern for Halloween. */

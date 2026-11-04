@@ -20,7 +20,7 @@ public class SeasonalLookTest {
         assertEquals(SeasonalLook.ACCENT_AUTO, l.accentKind);
         assertEquals("", l.greeting);             // the built-in "Happy Halloween"
         assertTrue(l.icons);
-        assertEquals(SeasonalLook.Swarm.ALWAYS, l.swarm);
+        assertEquals(SeasonalLook.Effect.ALWAYS, l.effect);
     }
 
     @Test
@@ -29,7 +29,7 @@ public class SeasonalLookTest {
         assertEquals(SeasonalLook.ACCENT_OFF, l.accentKind);
         assertNull(l.greeting);
         assertFalse(l.icons);
-        assertEquals(SeasonalLook.Swarm.OFF, l.swarm);
+        assertEquals(SeasonalLook.Effect.OFF, l.effect);
     }
 
     @Test
@@ -46,7 +46,7 @@ public class SeasonalLookTest {
         assertEquals(0xFF102030, l.accent);
         assertEquals("Boo!", l.greeting);
         assertFalse(l.icons);
-        assertEquals(SeasonalLook.Swarm.AFTER_BREAK, l.swarm);
+        assertEquals(SeasonalLook.Effect.AFTER_BREAK, l.effect);
     }
 
     @Test
@@ -55,7 +55,7 @@ public class SeasonalLookTest {
         assertEquals(SeasonalLook.ACCENT_AUTO, l.accentKind);
         assertEquals("", l.greeting);
         assertTrue(l.icons);
-        assertEquals(SeasonalLook.Swarm.ALWAYS, l.swarm);
+        assertEquals(SeasonalLook.Effect.ALWAYS, l.effect);
         SeasonalLook m = SeasonalLook.build("halloween", null, null, null, null);
         assertEquals(SeasonalLook.ACCENT_AUTO, m.accentKind);
     }
@@ -70,30 +70,60 @@ public class SeasonalLookTest {
     public void accentOffAndSwarmOff() {
         SeasonalLook l = SeasonalLook.build("halloween", " OFF ", null, null, "off");
         assertEquals(SeasonalLook.ACCENT_OFF, l.accentKind);
-        assertEquals(SeasonalLook.Swarm.OFF, l.swarm);
+        assertEquals(SeasonalLook.Effect.OFF, l.effect);
     }
 
-    // ---- the swarm's schedule ------------------------------------------------------------------------
+    @Test
+    public void christmasHasItsColoursAndNoEffect() {
+        SeasonalLook l = SeasonalLook.defaults(SeasonalLook.CHRISTMAS);
+        assertEquals(SeasonalLook.ACCENT_AUTO, l.accentKind);
+        assertEquals(SeasonalLook.ICE_BLUE, l.onWarm);
+        assertEquals(SeasonalLook.CHRISTMAS_RED, l.onCool);
+        assertEquals("", l.greeting);
+        assertEquals(SeasonalLook.Effect.OFF, l.effect);
+        assertEquals(SeasonalLook.CHRISTMAS_RED,
+                SeasonalLook.contrastAccent(filled(0x1C2A6A, 10), 10, l.onWarm, l.onCool));
+    }
+
+    @Test
+    public void christmasGreetingFollowsTheDate() {
+        // 2026: Christmas Day is a Friday, the Sundays of Advent are 29 Nov, 6, 13 and 20 Dec.
+        assertEquals(SeasonalLook.GREET_SEASON, SeasonalLook.christmasGreeting(LocalDate.of(2026, 11, 23)));
+        assertEquals(SeasonalLook.GREET_SEASON, SeasonalLook.christmasGreeting(LocalDate.of(2026, 11, 22)));
+        assertEquals(1, SeasonalLook.christmasGreeting(LocalDate.of(2026, 11, 29)));
+        assertEquals(2, SeasonalLook.christmasGreeting(LocalDate.of(2026, 12, 6)));
+        assertEquals(3, SeasonalLook.christmasGreeting(LocalDate.of(2026, 12, 13)));
+        assertEquals(4, SeasonalLook.christmasGreeting(LocalDate.of(2026, 12, 20)));
+        assertEquals(SeasonalLook.GREET_SEASON, SeasonalLook.christmasGreeting(LocalDate.of(2026, 12, 21)));
+        assertEquals(SeasonalLook.GREET_CHRISTMAS, SeasonalLook.christmasGreeting(LocalDate.of(2026, 12, 24)));
+        assertEquals(SeasonalLook.GREET_CHRISTMAS, SeasonalLook.christmasGreeting(LocalDate.of(2026, 12, 26)));
+        // 2022: Christmas Day was a Sunday, so the 4th Sunday of Advent was 18 Dec, not Christmas Day itself.
+        assertEquals(4, SeasonalLook.christmasGreeting(LocalDate.of(2022, 12, 18)));
+        assertEquals(1, SeasonalLook.christmasGreeting(LocalDate.of(2022, 11, 27)));
+        assertEquals(SeasonalLook.GREET_CHRISTMAS, SeasonalLook.christmasGreeting(LocalDate.of(2022, 12, 25)));
+    }
+
+    // ---- the effect's schedule ------------------------------------------------------------------------
 
     @Test
     public void dailyPlaysOnceADay() {
-        assertTrue(SeasonalLook.swarmDue(SeasonalLook.Swarm.DAILY, DAY, "", 0, 0));
-        assertTrue(SeasonalLook.swarmDue(SeasonalLook.Swarm.DAILY, DAY, "2026-10-30", 0, 0));
-        assertFalse(SeasonalLook.swarmDue(SeasonalLook.Swarm.DAILY, DAY, "2026-10-31", 0, 0));
+        assertTrue(SeasonalLook.effectDue(SeasonalLook.Effect.DAILY, DAY, "", 0, 0));
+        assertTrue(SeasonalLook.effectDue(SeasonalLook.Effect.DAILY, DAY, "2026-10-30", 0, 0));
+        assertFalse(SeasonalLook.effectDue(SeasonalLook.Effect.DAILY, DAY, "2026-10-31", 0, 0));
     }
 
     @Test
     public void afterABreakNeedsAnHourAwayOrAFreshStart() {
         long now = 10 * SeasonalLook.BREAK_MS;
-        assertTrue(SeasonalLook.swarmDue(SeasonalLook.Swarm.AFTER_BREAK, DAY, "", now, 0));
-        assertFalse(SeasonalLook.swarmDue(SeasonalLook.Swarm.AFTER_BREAK, DAY, "", now, now - 60_000));
-        assertTrue(SeasonalLook.swarmDue(SeasonalLook.Swarm.AFTER_BREAK, DAY, "", now, now - SeasonalLook.BREAK_MS));
+        assertTrue(SeasonalLook.effectDue(SeasonalLook.Effect.AFTER_BREAK, DAY, "", now, 0));
+        assertFalse(SeasonalLook.effectDue(SeasonalLook.Effect.AFTER_BREAK, DAY, "", now, now - 60_000));
+        assertTrue(SeasonalLook.effectDue(SeasonalLook.Effect.AFTER_BREAK, DAY, "", now, now - SeasonalLook.BREAK_MS));
     }
 
     @Test
     public void alwaysAndOff() {
-        assertTrue(SeasonalLook.swarmDue(SeasonalLook.Swarm.ALWAYS, DAY, "2026-10-31", 5, 4));
-        assertFalse(SeasonalLook.swarmDue(SeasonalLook.Swarm.OFF, DAY, "", 0, 0));
+        assertTrue(SeasonalLook.effectDue(SeasonalLook.Effect.ALWAYS, DAY, "2026-10-31", 5, 4));
+        assertFalse(SeasonalLook.effectDue(SeasonalLook.Effect.OFF, DAY, "", 0, 0));
     }
 
     // ---- colours from a picture ----------------------------------------------------------------------
@@ -106,15 +136,15 @@ public class SeasonalLookTest {
 
     @Test
     public void aWarmPictureGetsPurpleACoolOneOrange() {
-        assertEquals(SeasonalLook.WITCH_PURPLE, SeasonalLook.contrastAccent(filled(0xC8602A, 100), 100));
-        assertEquals(SeasonalLook.PUMPKIN_ORANGE, SeasonalLook.contrastAccent(filled(0x1C2A6A, 100), 100));
+        assertEquals(SeasonalLook.WITCH_PURPLE, SeasonalLook.contrastAccent(filled(0xC8602A, 100), 100, SeasonalLook.WITCH_PURPLE, SeasonalLook.PUMPKIN_ORANGE));
+        assertEquals(SeasonalLook.PUMPKIN_ORANGE, SeasonalLook.contrastAccent(filled(0x1C2A6A, 100), 100, SeasonalLook.WITCH_PURPLE, SeasonalLook.PUMPKIN_ORANGE));
     }
 
     @Test
     public void blackCountsForNothing() {
         int[] p = filled(0x000000, 100);
         p[0] = 0x2040A0;   // one cool pixel among black ones
-        assertEquals(SeasonalLook.PUMPKIN_ORANGE, SeasonalLook.contrastAccent(p, 100));
+        assertEquals(SeasonalLook.PUMPKIN_ORANGE, SeasonalLook.contrastAccent(p, 100, SeasonalLook.WITCH_PURPLE, SeasonalLook.PUMPKIN_ORANGE));
     }
 
     @Test

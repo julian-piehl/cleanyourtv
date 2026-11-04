@@ -252,9 +252,10 @@ a general picture, the reserve for days without pictures of their own.
   "wallpaper_rotation_minutes": 60,
   "seasonal": {
     "hemisphere": "north",
-    "events": ["halloween"],
+    "events": ["halloween", "christmas"],
     "custom_events": [
       { "id": "birthday", "from": "05-14", "to": "05-14" },
+      { "id": "advent", "from": { "before": "12-25", "weekday": "sun", "n": 4 }, "to": "12-24" },
       { "id": "carnival", "easter": [-52, -47] },
       { "id": "mothers_day", "nth_weekday": { "month": 5, "weekday": "sun", "n": 2 } },
       { "id": "diwali", "dates": ["2026-11-08", "2027-10-29"] }
@@ -267,9 +268,9 @@ a general picture, the reserve for days without pictures of their own.
 |---|---|
 | `hemisphere` | `north` (default) or `south`, which moves the seasons by half a year |
 | `seasons` | Meteorological seasons, whole months: `spring` March to May, `summer` June to August, `autumn` September to November, `winter` December to February (in the north). On by default; `false` switches them off |
-| `events` | Built-in events to switch on by name. So far: `halloween`, 24 October to 1 November |
-| `looks` | How Home looks during each event, by event id: `accent` (`auto`, `#RRGGBB` or `off`), `greeting` (text, or `false` for the time-of-day greeting), `icons` (`true` or `false`) and `swarm` (`off`, `daily`, `after_break` or `always`). See below |
-| `custom_events` | The theme's own events, on by being defined. Each has an `id` (lower-case letters, digits and `_`, used as the filename prefix) and one rule: `from`/`to` as `MM-DD` every year, also over New Year; `easter` as days before and after Western Easter Sunday; `nth_weekday` with `month`, `weekday` (`mon` to `sun`) and `n` (1 to 5, or -1 for the last); or `dates` as a list of `YYYY-MM-DD` days. An `id` of a built-in event replaces its dates |
+| `events` | Built-in events to switch on by name: `halloween`, 24 October to 1 November, and `christmas`, from the Monday after Totensonntag (the fifth Sunday before Christmas Day, when the Christmas markets open in Germany) to 26 December |
+| `looks` | How Home looks during each event, by event id: `accent` (`auto`, `#RRGGBB` or `off`), `greeting` (text, or `false` for the time-of-day greeting), `icons` (`true` or `false`) and `effect` (`off`, `daily`, `after_break` or `always`). See below |
+| `custom_events` | The theme's own events, on by being defined. Each has an `id` (lower-case letters, digits and `_`, used as the filename prefix) and one rule: `from`/`to` every year, also over New Year, each as `MM-DD` or as a weekday counted back from a day, `{"before": "12-25", "weekday": "sun", "n": 4, "days": 0}` (the `n`-th `weekday` before `before`, moved by `days`; `n` 1 to 5, `days` up to 31 either way); `easter` as days before and after Western Easter Sunday; `nth_weekday` with `month`, `weekday` (`mon` to `sun`) and `n` (1 to 5, or -1 for the last); or `dates` as a list of `YYYY-MM-DD` days. An `id` of a built-in event replaces its dates |
 
 A day shows its event's pictures if it has any, otherwise its season's, otherwise the general pictures, and if
 there are none of those either, the whole collection. When events overlap, the shorter one wins, and on a tie the
@@ -278,24 +279,26 @@ when no switched-on season or event has that name. Each group rotates through up
 pictures. A season or event that begins or ends while Home is open takes effect the next time Home comes back,
 never while it is on screen. A picture chosen in Launcher settings still wins over the calendar.
 
-During an event, Home can take on its look. Halloween has all of it by default; a theme changes single keys:
+During an event, Home can take on its look. Halloween and Christmas have one by default; a theme changes single keys:
 
 ```json
-"looks": { "halloween": { "accent": "auto", "greeting": "Happy Halloween", "icons": true, "swarm": "always" } }
+"looks": { "halloween": { "accent": "auto", "greeting": "Happy Halloween", "icons": true, "effect": "always" } }
 ```
 
-- `accent`: the focus glow and the icons' lit details. `auto` picks, for each wallpaper, whichever of pumpkin orange
-  and witch purple stands out from it, so the focus stays easy to find; a colour as `#RRGGBB` is fixed; `off` keeps
-  the white glow. The greeting takes the wallpaper's own strongest colour. Both blend over when the picture changes.
-- `greeting`: replaces the time-of-day greeting. Halloween's is "Happy Halloween".
+- `accent`: the focus glow and the icons' lit details. `auto` picks, for each wallpaper, whichever of the event's two
+  colours stands out from it, so the focus stays easy to find: witch purple or pumpkin orange for Halloween, ice blue
+  or Christmas red for Christmas. A colour as `#RRGGBB` is fixed; `off` keeps the white glow. The greeting takes the
+  wallpaper's own strongest colour. Both blend over when the picture changes.
+- `greeting`: replaces the time-of-day greeting. Halloween's is "Happy Halloween". Christmas's follows the date:
+  "Season's Greetings" in Advent ("Schöne Adventszeit", and "Schönen 1. Advent" to "4. Advent" on its Sundays, on a
+  German TV), "Merry Christmas" from 24 to 26 December.
 - `icons`: Halloween's icons for Inputs (a cauldron), Wi-Fi (a bat under the arcs, hanging asleep when offline) and
   Settings (a jack-o'-lantern). They are one colour like the stock icons and move once, briefly, when focused.
-- `swarm`: bats burst up from below the dock and fly past the viewer when Home opens. `always` (Halloween's
-  default) plays every time, `daily` on the first Home of the day, `after_break` when Home was away for an hour or
-  more, `off` never.
-  `reduced_motion` turns it off.
+- `effect`: the event's effect when Home opens. Halloween's bats burst up from below the dock and fly past the
+  viewer; Christmas has none yet. `always` (Halloween's default) plays every time, `daily` on the first Home of the
+  day, `after_break` when Home was away for an hour or more, `off` never. `reduced_motion` turns it off.
 
-Events other than Halloween have none of this unless their look sets it. A festival (`festival`) takes precedence
+Events other than Halloween and Christmas have none of this unless their look sets it. A festival (`festival`) takes precedence
 over a seasonal look.
 
 ## Reduced motion

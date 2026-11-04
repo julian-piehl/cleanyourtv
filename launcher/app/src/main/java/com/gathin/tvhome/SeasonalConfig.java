@@ -16,9 +16,10 @@ import java.util.regex.Pattern;
  * "seasonal": {
  *   "hemisphere": "north",
  *   "seasons": true,
- *   "events": ["halloween"],
+ *   "events": ["halloween", "christmas"],
  *   "custom_events": [
  *     { "id": "birthday", "from": "05-14", "to": "05-14" },
+ *     { "id": "advent", "from": { "before": "12-25", "weekday": "sun", "n": 4 }, "to": "12-24" },
  *     { "id": "carnival", "easter": [-52, -47] },
  *     { "id": "mothers_day", "nth_weekday": { "month": 5, "weekday": "sun", "n": 2 } },
  *     { "id": "diwali", "dates": ["2026-11-08", "2027-10-29"] }
@@ -117,10 +118,7 @@ final class SeasonalConfig {
         boolean fixed = o.has("from") || o.has("to"), easter = o.has("easter"), nth = o.has("nth_weekday"),
                 dates = o.has("dates");
         if ((fixed ? 1 : 0) + (easter ? 1 : 0) + (nth ? 1 : 0) + (dates ? 1 : 0) != 1) return null;
-        if (fixed) {
-            Object from = o.opt("from"), to = o.opt("to");
-            return from instanceof String && to instanceof String ? SeasonalRule.fixed((String) from, (String) to) : null;
-        }
+        if (fixed) return SeasonalRule.range(anchor(o.opt("from")), anchor(o.opt("to")));
         if (easter) {
             JSONArray a = o.optJSONArray("easter");
             if (a == null || a.length() != 2 || !(a.opt(0) instanceof Integer) || !(a.opt(1) instanceof Integer)) {
@@ -140,6 +138,18 @@ final class SeasonalConfig {
         if (a == null) return null;
         List<String> days = strings(a);
         return days.size() == a.length() ? SeasonalRule.dates(days) : null;   // a non-string entry spoils the list
+    }
+
+    /** One end of a range: {@code "MM-DD"} or {@code {"before": "MM-DD", "weekday": "sun", "n": 5, "days": 1}}. */
+    private static SeasonalRule.Anchor anchor(Object v) {
+        if (v instanceof String) return SeasonalRule.Anchor.day((String) v);
+        if (!(v instanceof JSONObject)) return null;
+        JSONObject a = (JSONObject) v;
+        Object before = a.opt("before"), weekday = a.opt("weekday"), n = a.opt("n"), days = a.opt("days");
+        if (!(before instanceof String) || !(weekday instanceof String) || !(n instanceof Integer)) return null;
+        if (days != null && !(days instanceof Integer)) return null;
+        return SeasonalRule.Anchor.weekdayBefore((String) before, (String) weekday, (Integer) n,
+                days == null ? 0 : (Integer) days);
     }
 
     private static List<String> strings(JSONArray a) {

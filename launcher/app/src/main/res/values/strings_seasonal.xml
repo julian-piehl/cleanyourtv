@@ -4,4 +4,10 @@
 <resources>
     <!-- The greeting during Halloween, in place of "Good evening". -->
     <string name="seasonal_halloween_greeting">Happy Halloween</string>
+    <!-- The greeting in the Christmas season before 24 December. -->
+    <string name="seasonal_advent_greeting">Season\'s Greetings</string>
+    <!-- The greeting on the four Sundays of Advent; %1$d is 1 to 4. English has no usual wording for these. -->
+    <string name="seasonal_advent_sunday_greeting">Season\'s Greetings</string>
+    <!-- The greeting from 24 to 26 December. -->
+    <string name="seasonal_christmas_greeting">Merry Christmas</string>
 </resources>

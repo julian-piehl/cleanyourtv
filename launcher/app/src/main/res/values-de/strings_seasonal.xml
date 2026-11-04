@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="seasonal_advent_greeting">Schöne Adventszeit</string>
+    <string name="seasonal_advent_sunday_greeting">Schönen %1$d. Advent</string>
+    <string name="seasonal_christmas_greeting">Frohe Weihnachten</string>
+</resources>

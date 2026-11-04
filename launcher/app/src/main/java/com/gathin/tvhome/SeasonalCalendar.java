@@ -39,7 +39,10 @@ final class SeasonalCalendar {
 
     static {
         Map<String, SeasonalRule> m = new LinkedHashMap<>();
-        m.put("halloween", SeasonalRule.fixed("10-24", "11-01"));
+        m.put(SeasonalLook.HALLOWEEN, SeasonalRule.fixed("10-24", "11-01"));
+        // From the Monday after Totensonntag (the 5th Sunday before Christmas), when the markets open, to Boxing Day.
+        m.put(SeasonalLook.CHRISTMAS, SeasonalRule.range(SeasonalRule.Anchor.weekdayBefore("12-25", "sun", 5, 1),
+                SeasonalRule.Anchor.day("12-26")));
         BUILT_IN = Collections.unmodifiableMap(m);
     }
 
