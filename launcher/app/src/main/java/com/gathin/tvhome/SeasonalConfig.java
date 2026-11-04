@@ -35,7 +35,6 @@ import java.util.regex.Pattern;
  */
 final class SeasonalConfig {
 
-    static final String KEY = "seasonal";
     /** Most events one theme may watch, built-in and custom together. */
     static final int MAX_EVENTS = 64;
     /** Event ids double as wallpaper prefixes ({@code halloween-01.jpg}), so no hyphen, dot or upper case. */
@@ -87,9 +86,11 @@ final class SeasonalConfig {
         return calendar.isOff() ? SeasonalCalendar.OFF : calendar;
     }
 
-    /** The calendar from a whole config.json, or {@link SeasonalCalendar#OFF} without a usable block. */
-    static SeasonalCalendar fromJson(JSONObject root) {
-        JSONObject block = root == null ? null : root.optJSONObject(KEY);
+    /**
+     * The calendar from config.json's {@code "seasonal"} block, or {@link SeasonalCalendar#OFF} without one. Config
+     * reads the block from the overlay, like every other key, so tests/test_shipped_config_keys_are_read.py sees it.
+     */
+    static SeasonalCalendar fromJson(JSONObject block) {
         if (block == null) return SeasonalCalendar.OFF;
         Object seasons = block.opt("seasons");
         Object hemisphere = block.opt("hemisphere");

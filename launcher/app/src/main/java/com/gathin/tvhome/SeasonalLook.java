@@ -100,10 +100,9 @@ final class SeasonalLook {
         return new SeasonalLook(event, kind, colour, text, ic, sw);
     }
 
-    /** The look for {@code event} from a whole config.json; {@link #NONE} when there is no event. */
-    static SeasonalLook fromJson(JSONObject root, String event) {
+    /** The look for {@code event} from config.json's {@code "seasonal"} block; {@link #NONE} when there is no event. */
+    static SeasonalLook fromJson(JSONObject block, String event) {
         if (event == null) return NONE;
-        JSONObject block = root == null ? null : root.optJSONObject(SeasonalConfig.KEY);
         JSONObject looks = block == null ? null : block.optJSONObject("looks");
         JSONObject o = looks == null ? null : looks.optJSONObject(event);
         if (o == null) return defaults(event);
