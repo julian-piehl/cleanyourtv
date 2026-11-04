@@ -298,7 +298,7 @@ During an event, Home can take on its look. Halloween and Christmas have one by 
   and move once, briefly, when focused.
 - `effect`: the event's effect when Home opens. Halloween's bats burst up from below the dock and fly past the
   viewer; Christmas has none yet. `always` (Halloween's default) plays every time, `daily` on the first Home of the
-  day, `after_break` when Home was away for an hour or more, `off` never. `reduced_motion` turns it off.
+  day, `after_break` when Home was away for an hour or more, `off` never. Coming out of standby it waits until the screen shows a picture. `reduced_motion` turns it off.
 
 Events other than Halloween and Christmas have none of this unless their look sets it. A festival (`festival`) takes precedence
 over a seasonal look.

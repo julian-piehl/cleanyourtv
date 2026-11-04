@@ -39,6 +39,8 @@ final class SeasonalSkin {
     private final SeasonalLook look;
     private final boolean reducedMotion;
     private final ArgbEvaluator argb = new ArgbEvaluator();
+    /** Holds the effect until the screen shows a picture (after standby); null for NONE. */
+    private final ScreenWake wake;
 
     private SeasonalIconDrawable inputsIcon, wifiIcon, settingsIcon;
     private TextView greeting;
@@ -52,6 +54,7 @@ final class SeasonalSkin {
         this.context = context;
         this.look = look;
         this.reducedMotion = reducedMotion;
+        wake = context == null ? null : new ScreenWake(context);
         accent = look.accentKind == SeasonalLook.ACCENT_FIXED ? look.accent
                 : look.accentKind == SeasonalLook.ACCENT_AUTO ? look.onCool : 0;
         greetingColour = accent != 0 ? lift(accent) : 0xFFFFFFFF;
@@ -219,19 +222,26 @@ final class SeasonalSkin {
         LocalDate today = LocalDate.now();
         String last = prefs.getString(EFFECT_DAY, "");
         if (!SeasonalLook.effectDue(look.effect, today, last, SystemClock.elapsedRealtime(), hiddenAt)) return;
-        prefs.edit().putString(EFFECT_DAY, today.toString()).apply();
-        root.postDelayed(() -> {
+        wake.whenSeen(() -> {
             if (!root.isAttachedToWindow()) return;
+            // Counted once it plays: a "daily" effect held back by a screen that went off again still comes.
+            prefs.edit().putString(EFFECT_DAY, today.toString()).apply();
             BatSwarmView swarm = new BatSwarmView(context);
             root.addView(swarm, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             swarm.play(SWARM_BATS, SWARM_MS, () -> root.removeView(swarm));
-        }, 100);   // just long enough for Home's first frame
+        });
     }
 
     /** Home went to the background. */
     void onHomeHidden() {
         hiddenAt = SystemClock.elapsedRealtime();
         if (blend != null) blend.cancel();
+        if (wake != null) wake.cancel();
+    }
+
+    /** Home is going away for good. */
+    void close() {
+        if (wake != null) wake.close();
     }
 }
